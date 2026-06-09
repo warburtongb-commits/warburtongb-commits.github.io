@@ -1,1 +1,1795 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BLUNT Performance Dashboard</title>
+<style>
+  /* ── TOKENS ── */
+  :root {
+    --bg:         #3b492a;
+    --surface:    #5d4679c7;
+    --surface2:   #1c2030;
+    --border:     #252a38;
+    --border2:    #2e3547;
+    --text:       #e8ecf4;
+    --text-muted: #e8ecf4;
+    --text-dim:   #e8ecf4;
 
+    --pass:       #22c55e;
+    --pass-bg:    rgba(34,197,94,.12);
+    --fail:       #ef4444;
+    --fail-bg:    rgba(239,68,68,.12);
+
+    --B: #3b82f6;
+    --L: #22c55e;
+    --U: #eab308;
+    --N: #f97316;
+    --T: #a855f7;
+
+    --B-bg: rgba(59,130,246,.15);
+    --L-bg: rgba(34,197,94,.15);
+    --U-bg: rgba(234,179,8,.15);
+    --N-bg: rgba(249,115,22,.15);
+    --T-bg: rgba(168,85,247,.15);
+
+    --accent: #3b82f6;
+    --radius: 12px;
+    --radius-sm: 8px;
+    --shadow: 0 4px 24px rgba(0,0,0,.45);
+  }
+
+  /* ── RESET ── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  /* ── LAYOUT ── */
+  .app { display: flex; flex-direction: column; min-height: 100vh; }
+
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .logo-mark {
+    display: flex;
+    gap: 3px;
+    align-items: flex-end;
+  }
+  .logo-mark span {
+    display: block;
+    width: 5px;
+    border-radius: 2px;
+  }
+  .logo-mark span:nth-child(1) { height: 14px; background: var(--B); }
+  .logo-mark span:nth-child(2) { height: 18px; background: var(--L); }
+  .logo-mark span:nth-child(3) { height: 12px; background: var(--U); }
+  .logo-mark span:nth-child(4) { height: 20px; background: var(--N); }
+  .logo-mark span:nth-child(5) { height: 16px; background: var(--T); }
+
+  .logo-text {
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: .06em;
+    color: var(--text);
+  }
+  .logo-text span { color: var(--text-muted); font-weight: 400; font-size: 12px; margin-left: 6px; letter-spacing: .02em; }
+
+  .header-meta {
+    font-size: 12px;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .status-dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--pass);
+    display: inline-block;
+    margin-right: 5px;
+    box-shadow: 0 0 6px var(--pass);
+  }
+  .status-dot.loading { background: var(--U); box-shadow: 0 0 6px var(--U); }
+  .status-dot.error   { background: var(--fail); box-shadow: 0 0 6px var(--fail); }
+
+  main { padding: 28px 24px; max-width: 1400px; margin: 0 auto; width: 100%; flex: 1; }
+
+  /* ── BREADCRUMB ── */
+  .breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 24px;
+    font-size: 13px;
+    color: var(--text-muted);
+  }
+  .breadcrumb a {
+    color: var(--accent);
+    text-decoration: none;
+    cursor: pointer;
+  }
+  .breadcrumb a:hover { text-decoration: underline; }
+  .breadcrumb .sep { color: var(--text-dim); }
+
+  /* ── VIEW TRANSITIONS ── */
+  .view { display: none; }
+  .view.active { display: block; }
+
+  /* ── KPI ROW ── */
+  .kpi-row {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 14px;
+    margin-bottom: 28px;
+  }
+
+  .kpi-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    transition: border-color .2s;
+  }
+  .kpi-card:hover { border-color: var(--border2); }
+
+  .kpi-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+  .kpi-value {
+    font-size: 28px;
+    font-weight: 700;
+    line-height: 1;
+    color: var(--text);
+  }
+  .kpi-value.pass-color { color: var(--pass); }
+  .kpi-value.fail-color { color: var(--fail); }
+  .kpi-sub {
+    font-size: 11px;
+    color: var(--text-dim);
+    margin-top: 2px;
+  }
+
+  .kpi-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .06em;
+    padding: 3px 10px;
+    border-radius: 20px;
+    width: fit-content;
+  }
+
+  /* ── CONTROLS ── */
+  .controls {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+  }
+  .controls-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .controls-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .07em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    white-space: nowrap;
+  }
+
+  .seg-btn {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text-muted);
+    font-size: 12px;
+    font-weight: 500;
+    padding: 6px 14px;
+    cursor: pointer;
+    transition: all .15s;
+    white-space: nowrap;
+  }
+  .seg-btn:hover { border-color: var(--border2); color: var(--text); }
+  .seg-btn.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+  }
+
+  select.ctrl-select {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text);
+    font-size: 12px;
+    font-weight: 500;
+    padding: 6px 28px 6px 12px;
+    cursor: pointer;
+    outline: none;
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%237a8299' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    transition: border-color .15s;
+  }
+  select.ctrl-select:hover { border-color: var(--border2); }
+  select.ctrl-select option { background: var(--surface2); }
+
+  .results-count {
+    margin-left: auto;
+    font-size: 12px;
+    color: var(--text-dim);
+  }
+
+  /* ── STORE GRID ── */
+  .store-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 16px;
+  }
+
+  .store-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    cursor: pointer;
+    transition: border-color .2s, transform .15s, box-shadow .2s;
+    position: relative;
+    overflow: hidden;
+  }
+  .store-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: var(--accent);
+    opacity: 0;
+    transition: opacity .2s;
+  }
+  .store-card:hover {
+    border-color: var(--border2);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow);
+  }
+  .store-card:hover::before { opacity: 1; }
+  .store-card.pass::before { background: var(--pass); }
+  .store-card.fail::before { background: var(--fail); }
+
+  .card-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 16px;
+    gap: 8px;
+  }
+  .card-store-name {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text);
+    line-height: 1.2;
+  }
+  .card-store-meta {
+    font-size: 11px;
+    color: var(--text-dim);
+    margin-top: 3px;
+  }
+
+  .badge {
+    flex-shrink: 0;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    padding: 3px 10px;
+    border-radius: 20px;
+  }
+  .badge.pass { background: var(--pass-bg); color: var(--pass); }
+  .badge.fail { background: var(--fail-bg); color: var(--fail); }
+
+  .card-score-row {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    margin-bottom: 16px;
+  }
+  .card-score-total {
+    font-size: 32px;
+    font-weight: 800;
+    line-height: 1;
+    color: var(--text);
+  }
+  .card-score-denom { font-size: 16px; color: var(--text-dim); }
+  .card-score-pct {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-left: 4px;
+  }
+
+  .cat-list { display: flex; flex-direction: column; gap: 8px; }
+
+  .cat-row { display: flex; flex-direction: column; gap: 4px; }
+  .cat-meta {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .cat-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .cat-name {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .07em;
+    text-transform: uppercase;
+    width: 14px;
+  }
+  .cat-full-name {
+    font-size: 11px;
+    color: var(--text-dim);
+    flex: 1;
+  }
+  .cat-score {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-muted);
+    margin-left: auto;
+    white-space: nowrap;
+  }
+
+  .bar-track {
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .bar-fill {
+    height: 100%;
+    border-radius: 2px;
+    transition: width .6s cubic-bezier(.4,0,.2,1);
+  }
+
+  .card-drill-hint {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: 14px;
+    font-size: 11px;
+    color: var(--text-dim);
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+  }
+  .card-drill-hint svg { opacity: .5; }
+
+  /* ── EMPTY / ERROR STATES ── */
+  .state-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 60px 32px;
+    text-align: center;
+    color: var(--text-muted);
+  }
+  .state-box .state-icon { font-size: 36px; margin-bottom: 12px; }
+  .state-box h3 { font-size: 16px; color: var(--text); margin-bottom: 6px; }
+  .state-box p { font-size: 13px; line-height: 1.6; max-width: 360px; margin: 0 auto; }
+
+  /* ═══════════════════════════════════════
+     STORE DETAIL VIEW
+  ═══════════════════════════════════════ */
+
+  .detail-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 28px;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  .detail-store-name {
+    font-size: 26px;
+    font-weight: 800;
+    letter-spacing: -.01em;
+    line-height: 1.1;
+  }
+  .detail-header-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+  }
+
+  .detail-kpi-row {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 12px;
+    margin-bottom: 28px;
+  }
+  .detail-kpi-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    text-align: center;
+  }
+  .detail-kpi-card .kpi-label { justify-content: center; }
+  .detail-kpi-card .kpi-value { font-size: 22px; text-align: center; }
+
+  /* cat accent cards */
+  .detail-kpi-card.cat-B { border-top: 3px solid var(--B); }
+  .detail-kpi-card.cat-L { border-top: 3px solid var(--L); }
+  .detail-kpi-card.cat-U { border-top: 3px solid var(--U); }
+  .detail-kpi-card.cat-N { border-top: 3px solid var(--N); }
+  .detail-kpi-card.cat-T { border-top: 3px solid var(--T); }
+
+  /* ── CHARTS SECTION ── */
+  .charts-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 28px;
+  }
+
+  .chart-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+  }
+  .chart-panel-title {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: .07em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 16px;
+  }
+
+  canvas { display: block; }
+
+  /* ── REPORTS TABLE ── */
+  .reports-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    margin-bottom: 28px;
+  }
+  .reports-panel-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .reports-panel-title {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: .07em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+  .report-count-badge {
+    font-size: 11px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 2px 10px;
+    color: var(--text-muted);
+  }
+
+  .reports-table { width: 100%; border-collapse: collapse; }
+  .reports-table th {
+    text-align: left;
+    padding: 10px 20px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+  .reports-table td {
+    padding: 12px 20px;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+    vertical-align: middle;
+  }
+  .reports-table tr:last-child td { border-bottom: none; }
+  .reports-table tr:hover td { background: var(--surface2); }
+
+  .report-total-chip {
+    display: inline-flex;
+    align-items: center;
+    font-size: 13px;
+    font-weight: 700;
+  }
+  .report-total-chip.pass { color: var(--pass); }
+  .report-total-chip.fail { color: var(--fail); }
+
+  .cat-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 4px;
+  }
+
+  .mini-bar-wrap {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .mini-bar-track {
+    flex: 1;
+    height: 3px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+    min-width: 40px;
+  }
+  .mini-bar-fill { height: 100%; border-radius: 2px; }
+
+  /* ── SKELETON LOADING ── */
+  .skeleton {
+    background: linear-gradient(90deg, var(--surface) 25%, var(--surface2) 50%, var(--surface) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 6px;
+  }
+  @keyframes shimmer {
+    0%   { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+
+  .skel-kpi { height: 90px; border-radius: var(--radius); }
+  .skel-card { height: 240px; border-radius: var(--radius); }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 1100px) {
+    .detail-kpi-row { grid-template-columns: repeat(4, 1fr); }
+  }
+  @media (max-width: 900px) {
+    .kpi-row { grid-template-columns: repeat(3, 1fr); }
+    .charts-row { grid-template-columns: 1fr; }
+    .detail-kpi-row { grid-template-columns: repeat(3, 1fr); }
+  }
+  @media (max-width: 640px) {
+    main { padding: 16px; }
+    header { padding: 0 16px; }
+    .kpi-row { grid-template-columns: repeat(2, 1fr); }
+    .kpi-card:last-child { grid-column: span 2; }
+    .controls { flex-direction: column; align-items: flex-start; }
+    .results-count { margin-left: 0; }
+    .store-grid { grid-template-columns: 1fr; }
+    .detail-kpi-row { grid-template-columns: repeat(2, 1fr); }
+    .detail-store-name { font-size: 20px; }
+    .reports-table { font-size: 12px; }
+    .reports-table th, .reports-table td { padding: 10px 12px; }
+  }
+  @media (max-width: 400px) {
+    .kpi-row { grid-template-columns: 1fr 1fr; }
+    .kpi-card:last-child { grid-column: auto; }
+  }
+
+  /* ── UTILITY ── */
+  .text-muted { color: var(--text-muted); }
+  .text-dim   { color: var(--text-dim); }
+  .mt-4 { margin-top: 4px; }
+
+  /* ── DEBUG BANNER ── */
+  .debug-banner {
+    border-radius: var(--radius-sm);
+    padding: 12px 16px;
+    font-size: 12px;
+    line-height: 1.6;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  .debug-banner.warn {
+    background: rgba(234,179,8,.1);
+    border: 1px solid rgba(234,179,8,.3);
+    color: #eab308;
+  }
+  .debug-banner.info {
+    background: rgba(59,130,246,.1);
+    border: 1px solid rgba(59,130,246,.3);
+    color: #93c5fd;
+  }
+  .debug-banner-close {
+    margin-left: auto;
+    cursor: pointer;
+    opacity: .6;
+    font-size: 14px;
+    line-height: 1;
+    flex-shrink: 0;
+    padding: 0 2px;
+  }
+  .debug-banner-close:hover { opacity: 1; }
+  /* ── REPORT DETAIL PANEL ── */
+  .report-row { cursor: default; }
+  .expand-btn {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 11px;
+    padding: 2px 6px;
+    transition: all .15s;
+  }
+  .expand-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  .report-detail-row td { padding: 0 !important; }
+  .report-detail-panel {
+    background: var(--surface2);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    padding: 16px 20px;
+  }
+  .rdf-section { margin-bottom: 10px; }
+  .rdf-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 4px;
+  }
+  .rdf-value {
+    font-size: 13px;
+    color: var(--text-muted);
+    line-height: 1.5;
+  }
+  .rdf-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 12px;
+    margin-bottom: 10px;
+  }
+  .rdf-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 10px 12px;
+  }
+  .rdf-actions { display: flex; flex-direction: column; gap: 6px; margin-top: 6px; }
+  .rdf-action {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--text-muted);
+  }
+  .action-num {
+    background: var(--accent);
+    color: #fff;
+    border-radius: 50%;
+    width: 18px; height: 18px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px; font-weight: 700;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+  .rdf-file-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    color: var(--accent);
+    font-size: 13px;
+    text-decoration: none;
+    margin-top: 4px;
+  }
+  .rdf-file-link:hover { text-decoration: underline; }
+
+  /* chart tooltip */
+  .chart-tooltip {
+    position: fixed;
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius-sm);
+    padding: 10px 14px;
+    font-size: 12px;
+    color: var(--text);
+    pointer-events: none;
+    z-index: 999;
+    box-shadow: var(--shadow);
+    transition: opacity .1s;
+    opacity: 0;
+    min-width: 140px;
+  }
+  .chart-tooltip.visible { opacity: 1; }
+  .tooltip-title { font-weight: 700; margin-bottom: 6px; color: var(--text); font-size: 12px; }
+  .tooltip-row { display: flex; justify-content: space-between; gap: 16px; }
+  .tooltip-key { color: var(--text-muted); }
+  .tooltip-val { font-weight: 600; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ── HEADER ── -->
+  <header>
+    <div class="logo">
+      <div class="logo-mark">
+        <span></span><span></span><span></span><span></span><span></span>
+      </div>
+      <div class="logo-text">BLUNT <span>Performance Dashboard</span></div>
+    </div>
+    <div class="header-meta">
+      <span id="last-updated"></span>
+      <span><span class="status-dot loading" id="status-dot"></span><span id="status-text">Loading…</span></span>
+    </div>
+  </header>
+
+  <main>
+
+    <!-- ═══ OVERVIEW VIEW ═══ -->
+    <div class="view active" id="view-overview">
+
+      <!-- KPI SKELETON -->
+      <div class="kpi-row" id="kpi-skeleton">
+        <div class="skeleton skel-kpi"></div>
+        <div class="skeleton skel-kpi"></div>
+        <div class="skeleton skel-kpi"></div>
+        <div class="skeleton skel-kpi"></div>
+        <div class="skeleton skel-kpi"></div>
+      </div>
+
+      <!-- KPI ROW (hidden until loaded) -->
+      <div class="kpi-row" id="kpi-row" style="display:none">
+        <div class="kpi-card">
+          <div class="kpi-label">Total Stores</div>
+          <div class="kpi-value" id="kpi-total">—</div>
+          <div class="kpi-sub">Active locations</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Passing</div>
+          <div class="kpi-value pass-color" id="kpi-pass">—</div>
+          <div class="kpi-sub">Score ≥ 68 / 75</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Failing</div>
+          <div class="kpi-value fail-color" id="kpi-fail">—</div>
+          <div class="kpi-sub">Score &lt; 68 / 75</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Average Score</div>
+          <div class="kpi-value" id="kpi-avg">—</div>
+          <div class="kpi-sub" id="kpi-avg-sub">Across all stores</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Weakest Category</div>
+          <div class="kpi-value" id="kpi-weak">—</div>
+          <div class="kpi-sub" id="kpi-weak-sub">Lowest combined score</div>
+        </div>
+      </div>
+
+      <!-- CONTROLS -->
+      <div class="controls" id="controls" style="display:none">
+        <div class="controls-group">
+          <span class="controls-label">Filter</span>
+          <button class="seg-btn active" data-filter="all">All</button>
+          <button class="seg-btn" data-filter="pass">Passing</button>
+          <button class="seg-btn" data-filter="fail">Failing</button>
+        </div>
+        <div class="controls-group">
+          <span class="controls-label">Sort</span>
+          <select class="ctrl-select" id="sort-select">
+            <option value="score-desc">Highest Score</option>
+            <option value="score-asc">Lowest Score</option>
+            <option value="name-asc">Store Name A–Z</option>
+          </select>
+        </div>
+        <div class="results-count" id="results-count"></div>
+      </div>
+
+      <!-- STORE GRID -->
+      <div id="grid-skeleton" class="store-grid">
+        <div class="skeleton skel-card"></div>
+        <div class="skeleton skel-card"></div>
+        <div class="skeleton skel-card"></div>
+      </div>
+      <div class="store-grid" id="store-grid" style="display:none"></div>
+      <div id="empty-state" style="display:none" class="state-box">
+        <div class="state-icon">🔍</div>
+        <h3>No stores match this filter</h3>
+        <p>Try switching to "All" to see every location.</p>
+      </div>
+
+    </div><!-- /view-overview -->
+
+    <!-- ═══ STORE DETAIL VIEW ═══ -->
+    <div class="view" id="view-detail">
+
+      <div class="breadcrumb">
+        <a id="back-btn">← All Stores</a>
+        <span class="sep">/</span>
+        <span id="breadcrumb-store">—</span>
+      </div>
+
+      <!-- DETAIL HEADER -->
+      <div class="detail-header">
+        <div>
+          <div class="detail-store-name" id="detail-store-name">—</div>
+          <div class="text-muted mt-4" id="detail-store-sub" style="font-size:13px"></div>
+        </div>
+        <div class="detail-header-right">
+          <div class="badge" id="detail-badge">—</div>
+        </div>
+      </div>
+
+      <!-- DETAIL KPI ROW -->
+      <div class="detail-kpi-row" id="detail-kpi-row"></div>
+
+      <!-- CHARTS -->
+      <div class="charts-row">
+        <div class="chart-panel">
+          <div class="chart-panel-title">Total Score — Trend Over Time</div>
+          <canvas id="chart-trend" height="200"></canvas>
+        </div>
+        <div class="chart-panel">
+          <div class="chart-panel-title">Category Breakdown — All Submissions</div>
+          <canvas id="chart-breakdown" height="200"></canvas>
+        </div>
+      </div>
+
+      <!-- REPORTS TABLE -->
+      <div class="reports-panel">
+        <div class="reports-panel-header">
+          <span class="reports-panel-title">Submission History</span>
+          <span class="report-count-badge" id="report-count-badge">0 reports</span>
+        </div>
+        <div style="overflow-x:auto">
+          <table class="reports-table">
+            <thead id="reports-thead"></thead>
+            <tbody id="reports-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+    </div><!-- /view-detail -->
+
+  </main>
+</div><!-- /app -->
+
+<!-- CHART TOOLTIP -->
+<div class="chart-tooltip" id="chart-tooltip">
+  <div class="tooltip-title" id="tt-title"></div>
+  <div id="tt-body"></div>
+</div>
+
+<script>
+/* ══════════════════════════════════════════════
+   CONFIG
+══════════════════════════════════════════════ */
+const API_URL = 'https://script.google.com/macros/s/AKfycbw9xHGbV8Rk4l-1b-qK_B4QHP14bdcH4pK_lpu-e1Qy0LAxzErRiOtli6BuJXkda2-d/exec';
+
+/* Category display config */
+const CATS = [
+  { key: 'B', name: 'Begin',      color: '#3b82f6', bg: 'rgba(59,130,246,.15)'  },
+  { key: 'L', name: 'Learn',      color: '#22c55e', bg: 'rgba(34,197,94,.15)'   },
+  { key: 'U', name: 'Understand', color: '#eab308', bg: 'rgba(234,179,8,.15)'   },
+  { key: 'N', name: 'Narrow',     color: '#f97316', bg: 'rgba(249,115,22,.15)'  },
+  { key: 'T', name: 'Transition', color: '#a855f7', bg: 'rgba(168,85,247,.15)'  },
+];
+const CAT_MAP = Object.fromEntries(CATS.map(c => [c.key, c]));
+
+const PASS_THRESHOLD = 68;
+const CAT_MAX        = 15;
+
+/* ══════════════════════════════════════════════
+   STATE
+══════════════════════════════════════════════ */
+let allData      = [];   // raw rows from API
+let storeMap     = {};   // storeName → [rows…]
+let filterState  = 'all';
+let sortState    = 'score-desc';
+let currentStore = null;
+
+/* ══════════════════════════════════════════════
+   HELPERS
+══════════════════════════════════════════════ */
+function rowTotal(r) {
+  const sum = CATS.reduce((s, c) => s + (Number(r[c.key]) || 0), 0);
+  // If all individual scores are 0 but we have a sheet-calculated total, use it
+  if (sum === 0 && r.totalOverride) return r.totalOverride;
+  return sum;
+}
+const isPassing = t => t >= PASS_THRESHOLD;
+
+function storeLatestTotal(storeName) {
+  const rows = storeMap[storeName] || [];
+  if (!rows.length) return 0;
+  return rowTotal(rows[rows.length - 1]);
+}
+
+function storeAvgTotal(storeName) {
+  const rows = storeMap[storeName] || [];
+  if (!rows.length) return 0;
+  return rows.reduce((s, r) => s + rowTotal(r), 0) / rows.length;
+}
+
+/* ── FIELD MAP: maps your Google Sheet column names to internal keys ── */
+const FIELD_MAP = {
+  store:       ['storeName', 'store', 'Store', 'STORE', 'store_name', 'location', 'Location', 'name', 'branch'],
+  date:        ['Date:', 'date', 'Date', 'timestamp', 'Timestamp', 'submittedAt', 'submission_date'],
+  observer:    ['Observer Name:', 'observer', 'observerName', 'Observer'],
+  manager:     ['Store Manager Name:', 'manager', 'storeManager', 'Manager'],
+  email:       ['Email Address', 'email', 'Email'],
+  B:           ['B - Begin With Greeting', 'B', 'b', 'begin', 'Begin'],
+  L:           ['L – Learn the Customer', 'L', 'l', 'learn', 'Learn'],
+  U:           ['U – Understand Needs: ', 'U – Understand Needs:', 'U', 'u', 'understand', 'Understand'],
+  N:           ['N – Narrow Recommendation: ', 'N – Narrow Recommendation:', 'N', 'n', 'narrow', 'Narrow'],
+  T:           ['T – Transition to Close: ', 'T – Transition to Close:', 'T', 't', 'transition', 'Transition'],
+  totalRaw:    ['Total : ___ / 75 (68 = Pass / Below 68 = requires action plan)', 'Total', 'total', 'score', 'Score'],
+  working:     ['What was working well in execution of BLUNT model?', 'workingWell', 'working'],
+  deviated:    ['Where execution deviated from expected standard?', 'deviated', 'deviation'],
+  engagement:  ['Are customers being engaged consistently? ', 'Are customers being engaged consistently?', 'customerEngagement', 'engagement'],
+  leadership:  ['  Leadership presence (Scale 1–5)  ', 'Leadership presence (Scale 1–5)', 'leadershipScale', 'leadership'],
+  coaching:    ['Is coaching happening in real time?', 'coachingRealTime', 'coaching'],
+  reinforcement: ['Model reinforcement observed', 'modelReinforcement', 'reinforcement'],
+  notes:       ['Notes:', 'notes', 'Notes'],
+  action1:     ['Improvement Action #1:', 'action1', 'improvementAction1'],
+  action2:     ['Improvement Action #2:', 'action2', 'improvementAction2'],
+  action3:     ['Improvement Action #3:', 'action3', 'improvementAction3'],
+  summary:     ['Overall summary of store execution in 2–3 sentences', 'summary', 'overallSummary'],
+  fileUpload:  ['Upload the completed "BLUNT Store Health Check"', 'fileUpload', 'upload'],
+};
+
+/* Find a value from a row using a list of candidate field names */
+function findField(row, candidates) {
+  for (const c of candidates) {
+    if (row[c] !== undefined && row[c] !== null && row[c] !== '') return row[c];
+  }
+  return null;
+}
+
+/* Normalize a raw API row into a clean internal object */
+function normalizeRow(row) {
+  const out = {};
+
+  // Store name
+  out.store = String(findField(row, FIELD_MAP.store) || 'Unknown').normalize('NFC').trim().replace(/\s+/g, ' ');
+
+  // Date — prefer 'Date:' field over Timestamp
+  const dateVal = findField(row, FIELD_MAP.date);
+  out.date = dateVal ? String(dateVal).trim() : null;
+
+  // Observer / Manager / Email
+  out.observer    = findField(row, FIELD_MAP.observer)    || null;
+  out.manager     = findField(row, FIELD_MAP.manager)     || null;
+  out.email       = findField(row, FIELD_MAP.email)       || null;
+
+  // Category scores — use individual fields when present, fall back to splitting totalRaw
+  const bVal = findField(row, FIELD_MAP.B);
+  const lVal = findField(row, FIELD_MAP.L);
+  const uVal = findField(row, FIELD_MAP.U);
+  const nVal = findField(row, FIELD_MAP.N);
+  const tVal = findField(row, FIELD_MAP.T);
+
+  out.B = Number(bVal) || 0;
+  out.L = Number(lVal) || 0;
+  out.U = Number(uVal) || 0;
+  out.N = Number(nVal) || 0;
+  out.T = Number(tVal) || 0;
+
+  // If individual scores are all 0 but we have a total, note it (partial submission)
+  const totalRaw = findField(row, FIELD_MAP.totalRaw);
+  out.totalOverride = (out.B + out.L + out.U + out.N + out.T === 0 && totalRaw)
+    ? Number(totalRaw) || null
+    : null;
+
+  // Rich fields
+  out.working       = findField(row, FIELD_MAP.working)       || null;
+  out.deviated      = findField(row, FIELD_MAP.deviated)      || null;
+  out.engagement    = findField(row, FIELD_MAP.engagement)    || null;
+  out.leadership    = findField(row, FIELD_MAP.leadership)    || null;
+  out.coaching      = findField(row, FIELD_MAP.coaching)      || null;
+  out.reinforcement = findField(row, FIELD_MAP.reinforcement) || null;
+  out.notes         = findField(row, FIELD_MAP.notes)         || null;
+  out.action1       = findField(row, FIELD_MAP.action1)       || null;
+  out.action2       = findField(row, FIELD_MAP.action2)       || null;
+  out.action3       = findField(row, FIELD_MAP.action3)       || null;
+  out.summary       = findField(row, FIELD_MAP.summary)       || null;
+  out.fileUpload    = findField(row, FIELD_MAP.fileUpload)    || null;
+
+  return out;
+}
+
+/* (Legacy stub — storeField param no longer needed) */
+function detectStoreField(data) { return 'storeName'; }
+
+/* Aggressively clean a store name for grouping (not display) */
+function groupKey(name) {
+  return String(name)
+    .normalize('NFC')
+    .trim()
+    .replace(/\s+/g, ' ')
+    .toLowerCase();
+}
+
+/* Group data by store */
+function buildStoreMap(data) {
+  if (!data.length) return {};
+  const storeField = detectStoreField(data);
+  console.log('[BLUNT] Detected store field:', storeField);
+  console.log('[BLUNT] Sample raw row:', data[0]);
+  console.log('[BLUNT] All raw store values:', data.map(r => JSON.stringify(r[storeField])));
+
+  // keyMap: groupKey -> canonical display name (first seen wins)
+  const keyMap = {};
+  const m = {};
+
+  data.forEach(row => {
+    const norm    = normalizeRow(row);
+    const rawName = norm.store || 'Unknown';
+    const key     = groupKey(rawName);
+
+    if (!keyMap[key]) {
+      keyMap[key] = rawName;
+      m[rawName]  = [];
+    }
+
+    const canonical = keyMap[key];
+    norm.store = canonical;
+    m[canonical].push(norm);
+  });
+
+  // Sort each store's submissions chronologically
+  Object.keys(m).forEach(k => {
+    m[k].sort((a, b) => {
+      if (!a.date && !b.date) return 0;
+      if (!a.date) return -1;
+      if (!b.date) return 1;
+      return new Date(a.date) - new Date(b.date);
+    });
+  });
+
+  console.log('[BLUNT] Stores found:', Object.keys(m));
+  console.log('[BLUNT] Submission counts:', Object.fromEntries(Object.entries(m).map(([k,v])=>[k,v.length])));
+  return m;
+}
+
+/* Unique store list with latest totals */
+function getStores() {
+  return Object.keys(storeMap).map(name => {
+    const rows  = storeMap[name];
+    const latest = rows[rows.length - 1];
+    const total  = rowTotal(latest);
+    return { name, rows, latest, total, passing: isPassing(total) };
+  });
+}
+
+/* Weakest category across all data */
+function weakestCat(data) {
+  const sums = {};
+  CATS.forEach(c => sums[c.key] = 0);
+  data.forEach(r => CATS.forEach(c => { sums[c.key] += Number(r[c.key]) || 0; }));
+  return CATS.reduce((w, c) => sums[c.key] < sums[w.key] ? c : w, CATS[0]);
+}
+
+/* Pretty date from row */
+function rowDate(row) {
+  if (row.date) {
+    const d = new Date(row.date);
+    if (!isNaN(d)) return d.toLocaleDateString('en-CA', { month: 'short', day: 'numeric', year: 'numeric' });
+    return row.date;
+  }
+  return '—';
+}
+
+/* ══════════════════════════════════════════════
+   FETCH
+══════════════════════════════════════════════ */
+async function fetchData() {
+  setStatus('loading', 'Loading…');
+  try {
+    const res  = await fetch(API_URL);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const json = await res.json();
+    allData   = Array.isArray(json) ? json : (json.data || []);
+
+    if (!allData.length) throw new Error('API returned 0 rows. Check your Google Apps Script.');
+
+    storeMap  = buildStoreMap(allData);
+
+    const storeCount = Object.keys(storeMap).length;
+    const subCounts  = Object.entries(storeMap).map(([k,v]) => `${k}: ${v.length}`).join(' · ');
+    setStatus('ok', `${allData.length} records · ${storeCount} store${storeCount !== 1 ? 's' : ''}`);
+    document.getElementById('last-updated').textContent =
+      'Updated ' + new Date().toLocaleTimeString('en-CA', { hour: '2-digit', minute: '2-digit' });
+
+    // Show debug banner briefly if grouping looks off
+    if (storeCount === allData.length && allData.length > 1) {
+      showDebugBanner(
+        `⚠️ Each row is being read as a separate store (${storeCount} stores, 1 submission each). ` +
+        `This usually means the "store" field name in your Sheet doesn't match what the dashboard expects. ` +
+        `Open your browser console (F12) to see the raw data and detected field name.`,
+        'warn'
+      );
+    }
+
+    renderOverview();
+  } catch (e) {
+    console.error(e);
+    setStatus('error', 'Failed to load');
+    showError(e);
+  }
+}
+
+function showDebugBanner(msg, type = 'warn') {
+  const existing = document.getElementById('debug-banner');
+  if (existing) existing.remove();
+  const el = document.createElement('div');
+  el.id = 'debug-banner';
+  el.className = `debug-banner ${type}`;
+  el.innerHTML = `<span>${msg}</span><span class="debug-banner-close" title="Dismiss">✕</span>`;
+  el.querySelector('.debug-banner-close').onclick = () => el.remove();
+  // Insert before KPI skeleton / controls
+  const ref = document.getElementById('kpi-skeleton') || document.getElementById('kpi-row');
+  ref.parentElement.insertBefore(el, ref);
+}
+
+function setStatus(type, msg) {
+  const dot  = document.getElementById('status-dot');
+  const text = document.getElementById('status-text');
+  dot.className  = 'status-dot ' + (type === 'ok' ? '' : type);
+  text.textContent = msg;
+}
+
+function showError(e) {
+  hideSkeleton();
+  document.getElementById('store-grid').style.display = 'none';
+  document.getElementById('empty-state').style.display = 'none';
+  const err = document.createElement('div');
+  err.className = 'state-box';
+  err.innerHTML = `
+    <div class="state-icon">⚠️</div>
+    <h3>Couldn't load data</h3>
+    <p>${e.message}<br><br>Make sure <code>API_URL</code> in the script is set to your Google Apps Script endpoint.</p>`;
+  document.querySelector('#view-overview').appendChild(err);
+}
+
+/* ══════════════════════════════════════════════
+   OVERVIEW RENDER
+══════════════════════════════════════════════ */
+function renderOverview() {
+  hideSkeleton();
+  renderKPIs();
+  document.getElementById('controls').style.display = 'flex';
+  renderGrid();
+}
+
+function hideSkeleton() {
+  document.getElementById('kpi-skeleton').style.display  = 'none';
+  document.getElementById('grid-skeleton').style.display = 'none';
+  document.getElementById('kpi-row').style.display       = 'grid';
+  document.getElementById('store-grid').style.display    = 'grid';
+}
+
+function renderKPIs() {
+  const stores = getStores();
+  const totals = stores.map(s => s.total);
+  const passC  = stores.filter(s => s.passing).length;
+  const failC  = stores.length - passC;
+  const avg    = totals.length ? (totals.reduce((a,b)=>a+b,0)/totals.length) : 0;
+  const weak   = weakestCat(allData);
+
+  document.getElementById('kpi-total').textContent = stores.length;
+  document.getElementById('kpi-pass').textContent  = passC;
+  document.getElementById('kpi-fail').textContent  = failC;
+  document.getElementById('kpi-avg').textContent   = avg.toFixed(1);
+  document.getElementById('kpi-avg-sub').textContent = `${((avg/75)*100).toFixed(0)}% of max`;
+  document.getElementById('kpi-weak').textContent  = weak.key;
+  document.getElementById('kpi-weak-sub').textContent = weak.name + ' — lowest sum';
+  document.getElementById('kpi-weak').style.color  = weak.color;
+}
+
+function renderGrid() {
+  let stores = getStores();
+
+  // filter
+  if (filterState === 'pass') stores = stores.filter(s => s.passing);
+  if (filterState === 'fail') stores = stores.filter(s => !s.passing);
+
+  // sort
+  if (sortState === 'score-desc') stores.sort((a,b) => b.total - a.total);
+  if (sortState === 'score-asc')  stores.sort((a,b) => a.total - b.total);
+  if (sortState === 'name-asc')   stores.sort((a,b) => a.name.localeCompare(b.name));
+
+  const grid  = document.getElementById('store-grid');
+  const empty = document.getElementById('empty-state');
+  const count = document.getElementById('results-count');
+
+  count.textContent = `${stores.length} store${stores.length !== 1 ? 's' : ''}`;
+
+  if (!stores.length) {
+    grid.style.display  = 'none';
+    empty.style.display = 'block';
+    return;
+  }
+  empty.style.display = 'none';
+  grid.style.display  = 'grid';
+  grid.innerHTML = stores.map(s => storeCardHTML(s)).join('');
+
+  grid.querySelectorAll('.store-card').forEach(card => {
+    card.addEventListener('click', () => openDetail(card.dataset.store));
+  });
+}
+
+function storeCardHTML(s) {
+  const pct     = ((s.total / 75) * 100).toFixed(0);
+  const cls     = s.passing ? 'pass' : 'fail';
+  const subCount = s.rows.length;
+
+  const catRows = CATS.map(c => {
+    const v    = Number(s.latest[c.key]) || 0;
+    const barW = ((v / CAT_MAX) * 100).toFixed(1);
+    return `
+      <div class="cat-row">
+        <div class="cat-meta">
+          <span class="cat-dot" style="background:${c.color}"></span>
+          <span class="cat-name" style="color:${c.color}">${c.key}</span>
+          <span class="cat-full-name">${c.name}</span>
+          <span class="cat-score">${v} / ${CAT_MAX}</span>
+        </div>
+        <div class="bar-track">
+          <div class="bar-fill" style="width:${barW}%;background:${c.color}"></div>
+        </div>
+      </div>`;
+  }).join('');
+
+  return `
+  <div class="store-card ${cls}" data-store="${escHtml(s.name)}">
+    <div class="card-header">
+      <div>
+        <div class="card-store-name">${escHtml(s.name)}</div>
+        <div class="card-store-meta">${subCount} submission${subCount !== 1 ? 's' : ''} on record</div>
+      </div>
+      <div class="badge ${cls}">${s.passing ? 'PASS' : 'FAIL'}</div>
+    </div>
+    <div class="card-score-row">
+      <span class="card-score-total">${s.total}</span>
+      <span class="card-score-denom">/ 75</span>
+      <span class="card-score-pct">${pct}%</span>
+    </div>
+    <div class="cat-list">${catRows}</div>
+    <div class="card-drill-hint">
+      <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6h8M6 2l4 4-4 4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      View submission history &amp; trends
+    </div>
+  </div>`;
+}
+
+/* ══════════════════════════════════════════════
+   DETAIL VIEW
+══════════════════════════════════════════════ */
+function openDetail(storeName) {
+  currentStore = storeName;
+  showView('detail');
+
+  const rows   = storeMap[storeName] || [];
+  const latest = rows[rows.length - 1] || {};
+  const total  = rowTotal(latest);
+  const pass   = isPassing(total);
+
+  // breadcrumb + header
+  document.getElementById('breadcrumb-store').textContent  = storeName;
+  document.getElementById('detail-store-name').textContent = storeName;
+  document.getElementById('detail-store-sub').textContent  =
+    `${rows.length} submission${rows.length !== 1 ? 's' : ''} on record · Latest total: ${total} / 75`;
+  const badge = document.getElementById('detail-badge');
+  badge.textContent  = pass ? 'PASS' : 'FAIL';
+  badge.className    = 'badge ' + (pass ? 'pass' : 'fail');
+
+  // KPI cards: total + 5 categories
+  renderDetailKPIs(rows, latest, total);
+
+  // charts
+  renderTrendChart(rows);
+  renderBreakdownChart(rows);
+
+  // table
+  renderReportsTable(rows);
+}
+
+function renderDetailKPIs(rows, latest, total) {
+  const avgTotal = rows.length
+    ? (rows.reduce((s,r) => s + rowTotal(r), 0) / rows.length).toFixed(1)
+    : '—';
+
+  const kpiRow = document.getElementById('detail-kpi-row');
+  kpiRow.innerHTML = `
+    <div class="detail-kpi-card">
+      <div class="kpi-label">Latest Score</div>
+      <div class="kpi-value" style="color:${isPassing(total) ? 'var(--pass)' : 'var(--fail)'}">${total}</div>
+      <div class="kpi-sub">Out of 75</div>
+    </div>
+    <div class="detail-kpi-card">
+      <div class="kpi-label">Avg Score</div>
+      <div class="kpi-value">${avgTotal}</div>
+      <div class="kpi-sub">All submissions</div>
+    </div>
+    ${CATS.map(c => {
+      const v = Number(latest[c.key]) || 0;
+      return `
+      <div class="detail-kpi-card cat-${c.key}">
+        <div class="kpi-label" style="color:${c.color}">${c.key} · ${c.name}</div>
+        <div class="kpi-value" style="color:${c.color}">${v}</div>
+        <div class="kpi-sub">/ ${CAT_MAX}</div>
+      </div>`;
+    }).join('')}`;
+}
+
+function renderReportsTable(rows) {
+  document.getElementById('report-count-badge').textContent =
+    `${rows.length} report${rows.length !== 1 ? 's' : ''}`;
+
+  const hasDate     = rows.some(r => r.date);
+  const hasObserver = rows.some(r => r.observer);
+  const hasManager  = rows.some(r => r.manager);
+
+  // Build thead
+  let cols = ['#'];
+  if (hasDate)     cols.push('Date');
+  cols.push('Total');
+  CATS.forEach(c => cols.push(c.key));
+  if (hasObserver) cols.push('Observer');
+  if (hasManager)  cols.push('Manager');
+  cols.push(''); // expand/detail toggle
+
+  document.getElementById('reports-thead').innerHTML =
+    '<tr>' + cols.map(c => `<th>${c}</th>`).join('') + '</tr>';
+
+  // Build tbody — newest first
+  const sorted = [...rows].reverse();
+  const tbody  = sorted.map((row, i) => {
+    const t    = rowTotal(row);
+    const pass = isPassing(t);
+    const num  = rows.length - i;
+    const rid  = `report-detail-${i}`;
+
+    // Has any rich content?
+    const hasRich = row.working || row.deviated || row.summary ||
+                    row.action1 || row.action2  || row.action3 ||
+                    row.notes   || row.leadership || row.engagement;
+
+    let tr = `<tr class="report-row" data-rid="${rid}">`;
+    tr += `<td class="text-dim" style="width:32px">${num}</td>`;
+    if (hasDate) tr += `<td style="white-space:nowrap">${rowDate(row)}</td>`;
+    tr += `<td><span class="report-total-chip ${pass ? 'pass' : 'fail'}">${t} / 75</span></td>`;
+    CATS.forEach(c => {
+      const v = Number(row[c.key]) || 0;
+      const w = ((v / CAT_MAX) * 100).toFixed(0);
+      tr += `<td>
+        <div class="mini-bar-wrap">
+          <span style="color:${c.color};font-weight:600;min-width:18px;display:inline-block">${v || '—'}</span>
+          <div class="mini-bar-track">
+            <div class="mini-bar-fill" style="width:${w}%;background:${c.color}"></div>
+          </div>
+        </div></td>`;
+    });
+    if (hasObserver) tr += `<td class="text-muted">${escHtml(row.observer || '—')}</td>`;
+    if (hasManager)  tr += `<td class="text-muted">${escHtml(row.manager  || '—')}</td>`;
+    tr += `<td style="width:32px;text-align:center">
+      ${hasRich ? `<button class="expand-btn" data-rid="${rid}" title="View details">▾</button>` : ''}
+    </td>`;
+    tr += '</tr>';
+
+    // Detail expansion row
+    if (hasRich) {
+      tr += `<tr class="report-detail-row" id="${rid}" style="display:none">
+        <td colspan="20">
+          <div class="report-detail-panel">
+            ${row.summary ? `<div class="rdf-section"><div class="rdf-label">Summary</div><div class="rdf-value">${escHtml(row.summary)}</div></div>` : ''}
+            <div class="rdf-grid">
+              ${row.working     ? `<div class="rdf-item"><div class="rdf-label">✅ What was working</div><div class="rdf-value">${escHtml(row.working)}</div></div>` : ''}
+              ${row.deviated    ? `<div class="rdf-item"><div class="rdf-label">⚠️ Where it deviated</div><div class="rdf-value">${escHtml(row.deviated)}</div></div>` : ''}
+              ${row.engagement  ? `<div class="rdf-item"><div class="rdf-label">👥 Customer engagement</div><div class="rdf-value">${escHtml(row.engagement)}</div></div>` : ''}
+              ${row.leadership  ? `<div class="rdf-item"><div class="rdf-label">🎯 Leadership presence</div><div class="rdf-value">${escHtml(String(row.leadership))} / 5</div></div>` : ''}
+              ${row.coaching    ? `<div class="rdf-item"><div class="rdf-label">💬 Real-time coaching</div><div class="rdf-value">${escHtml(String(row.coaching))}</div></div>` : ''}
+              ${row.reinforcement ? `<div class="rdf-item"><div class="rdf-label">🔁 Model reinforcement</div><div class="rdf-value">${escHtml(String(row.reinforcement))}</div></div>` : ''}
+              ${row.notes       ? `<div class="rdf-item"><div class="rdf-label">📝 Notes</div><div class="rdf-value">${escHtml(row.notes)}</div></div>` : ''}
+            </div>
+            ${(row.action1 || row.action2 || row.action3) ? `
+            <div class="rdf-section" style="margin-top:12px">
+              <div class="rdf-label">🚀 Improvement Actions</div>
+              <div class="rdf-actions">
+                ${row.action1 ? `<div class="rdf-action"><span class="action-num">1</span>${escHtml(row.action1)}</div>` : ''}
+                ${row.action2 ? `<div class="rdf-action"><span class="action-num">2</span>${escHtml(row.action2)}</div>` : ''}
+                ${row.action3 ? `<div class="rdf-action"><span class="action-num">3</span>${escHtml(row.action3)}</div>` : ''}
+              </div>
+            </div>` : ''}
+            ${row.fileUpload ? `
+            <div class="rdf-section" style="margin-top:12px">
+              <div class="rdf-label">📎 Attached Report</div>
+              <a href="${escHtml(row.fileUpload)}" target="_blank" rel="noopener" class="rdf-file-link">View uploaded file ↗</a>
+            </div>` : ''}
+          </div>
+        </td>
+      </tr>`;
+    }
+
+    return tr;
+  }).join('');
+
+  document.getElementById('reports-tbody').innerHTML = tbody ||
+    '<tr><td colspan="20" style="text-align:center;color:var(--text-dim);padding:24px">No submissions yet</td></tr>';
+
+  // Expand/collapse handlers
+  document.querySelectorAll('.expand-btn').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      const rid    = btn.dataset.rid;
+      const detail = document.getElementById(rid);
+      const open   = detail.style.display !== 'none';
+      detail.style.display = open ? 'none' : 'table-row';
+      btn.textContent = open ? '▾' : '▴';
+    });
+  });
+}
+
+/* ══════════════════════════════════════════════
+   CHARTS (hand-rolled canvas, no external deps)
+══════════════════════════════════════════════ */
+const TT = document.getElementById('chart-tooltip');
+
+function setupCanvas(id) {
+  const canvas = document.getElementById(id);
+  const dpr    = window.devicePixelRatio || 1;
+  const rect   = canvas.parentElement.getBoundingClientRect();
+  canvas.width  = rect.width  * dpr;
+  canvas.height = canvas.height * dpr; // height set via HTML attr (200px → scaled)
+  canvas.style.width  = rect.width + 'px';
+  canvas.style.height = '200px';
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+  return { ctx, w: rect.width, h: 200, dpr };
+}
+
+/* TREND LINE CHART */
+function renderTrendChart(rows) {
+  const { ctx, w, h } = setupCanvas('chart-trend');
+  const canvas = document.getElementById('chart-trend');
+
+  if (rows.length < 1) {
+    drawEmpty(ctx, w, h, 'No data');
+    return;
+  }
+
+  const pad    = { top: 16, right: 20, bottom: 36, left: 44 };
+  const cw     = w - pad.left - pad.right;
+  const ch     = h - pad.top  - pad.bottom;
+
+  const totals = rows.map(rowTotal);
+  const min    = 0;
+  const max    = 75;
+
+  const toX = i => pad.left + (rows.length <= 1 ? cw/2 : (i / (rows.length-1)) * cw);
+  const toY = v => pad.top  + ch - ((v - min) / (max - min)) * ch;
+
+  // Grid
+  ctx.strokeStyle = '#252a38';
+  ctx.lineWidth   = 1;
+  [0,15,30,45,60,75].forEach(v => {
+    const y = toY(v);
+    ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(pad.left+cw, y); ctx.stroke();
+    ctx.fillStyle = '#4a5268';
+    ctx.font = '10px system-ui';
+    ctx.textAlign = 'right';
+    ctx.fillText(v, pad.left - 8, y + 3.5);
+  });
+
+  // Pass threshold line
+  const ty = toY(PASS_THRESHOLD);
+  ctx.strokeStyle = 'rgba(34,197,94,.35)';
+  ctx.setLineDash([4, 4]);
+  ctx.beginPath(); ctx.moveTo(pad.left, ty); ctx.lineTo(pad.left+cw, ty); ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Area fill
+  if (rows.length > 1) {
+    const grad = ctx.createLinearGradient(0, pad.top, 0, pad.top+ch);
+    grad.addColorStop(0, 'rgba(59,130,246,.2)');
+    grad.addColorStop(1, 'rgba(59,130,246,0)');
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.moveTo(toX(0), toY(totals[0]));
+    totals.forEach((v,i) => ctx.lineTo(toX(i), toY(v)));
+    ctx.lineTo(toX(totals.length-1), pad.top+ch);
+    ctx.lineTo(toX(0), pad.top+ch);
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  // Line
+  ctx.strokeStyle = '#3b82f6';
+  ctx.lineWidth   = 2.5;
+  ctx.lineJoin    = 'round';
+  ctx.beginPath();
+  totals.forEach((v,i) => i===0 ? ctx.moveTo(toX(i),toY(v)) : ctx.lineTo(toX(i),toY(v)));
+  ctx.stroke();
+
+  // Dots + x-labels
+  totals.forEach((v,i) => {
+    const x = toX(i); const y = toY(v);
+    const pass = isPassing(v);
+    ctx.beginPath();
+    ctx.arc(x, y, 4, 0, Math.PI*2);
+    ctx.fillStyle = pass ? '#22c55e' : '#ef4444';
+    ctx.fill();
+    ctx.strokeStyle = '#0d0f14'; ctx.lineWidth = 1.5;
+    ctx.stroke();
+    // x label
+    ctx.fillStyle = '#4a5268'; ctx.font = '10px system-ui'; ctx.textAlign = 'center';
+    ctx.fillText(rowDate(rows[i]).replace(', ','\n').substring(0,6) || `#${i+1}`, x, h - 6);
+  });
+
+  // Hover
+  canvas._rows   = rows;
+  canvas._totals = totals;
+  canvas._toX    = toX;
+  canvas._toY    = toY;
+  canvas._pad    = pad;
+  canvas._rows   = rows;
+  canvas.onmousemove = e => trendHover(e, canvas);
+  canvas.onmouseleave = () => { TT.classList.remove('visible'); };
+}
+
+function trendHover(e, canvas) {
+  const rect   = canvas.getBoundingClientRect();
+  const mx     = e.clientX - rect.left;
+  const rows   = canvas._rows;
+  const totals = canvas._totals;
+  const toX    = canvas._toX;
+
+  let best = 0, bestDist = Infinity;
+  totals.forEach((_,i) => {
+    const d = Math.abs(toX(i) - mx);
+    if (d < bestDist) { bestDist = d; best = i; }
+  });
+  if (bestDist > 40) { TT.classList.remove('visible'); return; }
+
+  const row = rows[best];
+  const t   = totals[best];
+  TT.classList.add('visible');
+  TT.style.left = (e.clientX + 14) + 'px';
+  TT.style.top  = (e.clientY - 10) + 'px';
+  document.getElementById('tt-title').textContent = rowDate(row) || `Submission ${best+1}`;
+  document.getElementById('tt-body').innerHTML =
+    `<div class="tooltip-row"><span class="tooltip-key">Total</span><span class="tooltip-val" style="color:${isPassing(t)?'#22c55e':'#ef4444'}">${t} / 75</span></div>` +
+    CATS.map(c => `<div class="tooltip-row"><span class="tooltip-key" style="color:${c.color}">${c.key}</span><span class="tooltip-val">${Number(row[c.key])||0}</span></div>`).join('');
+}
+
+/* BREAKDOWN GROUPED BAR CHART */
+function renderBreakdownChart(rows) {
+  const { ctx, w, h } = setupCanvas('chart-breakdown');
+  const canvas = document.getElementById('chart-breakdown');
+
+  if (!rows.length) { drawEmpty(ctx, w, h, 'No data'); return; }
+
+  const pad  = { top: 16, right: 16, bottom: 36, left: 44 };
+  const cw   = w - pad.left - pad.right;
+  const ch   = h - pad.top  - pad.bottom;
+
+  const n       = rows.length;
+  const gapG    = 10; // gap between groups
+  const gapB    = 2;  // gap between bars within group
+  const groupW  = (cw - gapG * (n-1)) / n;
+  const barW    = (groupW - gapB * (CATS.length-1)) / CATS.length;
+
+  const max = CAT_MAX;
+  const toY = v => pad.top + ch - (v / max) * ch;
+
+  // Y grid
+  [0,5,10,15].forEach(v => {
+    const y = toY(v);
+    ctx.strokeStyle = '#252a38'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(pad.left+cw, y); ctx.stroke();
+    ctx.fillStyle = '#4a5268'; ctx.font = '10px system-ui'; ctx.textAlign = 'right';
+    ctx.fillText(v, pad.left - 8, y + 3.5);
+  });
+
+  // Bars
+  rows.forEach((row, gi) => {
+    const gx = pad.left + gi * (groupW + gapG);
+    CATS.forEach((c, ci) => {
+      const v  = Number(row[c.key]) || 0;
+      const bx = gx + ci * (barW + gapB);
+      const by = toY(v);
+      const bh = ch - (by - pad.top);
+      ctx.fillStyle = c.color;
+      ctx.beginPath();
+      ctx.roundRect ? ctx.roundRect(bx, by, barW, bh, [2,2,0,0]) : ctx.rect(bx, by, barW, bh);
+      ctx.fill();
+    });
+    // x label
+    ctx.fillStyle = '#4a5268'; ctx.font = '10px system-ui'; ctx.textAlign = 'center';
+    ctx.fillText(rowDate(row).substring(0,6) || `#${gi+1}`, gx + groupW/2, h - 6);
+  });
+
+  // Legend
+  const legY = pad.top - 2;
+  let legX   = pad.left;
+  CATS.forEach(c => {
+    ctx.fillStyle = c.color;
+    ctx.fillRect(legX, legY, 8, 8);
+    ctx.fillStyle = '#7a8299'; ctx.font = '10px system-ui'; ctx.textAlign = 'left';
+    ctx.fillText(c.key, legX + 11, legY + 8);
+    legX += 28;
+  });
+
+  // hover
+  canvas._rows   = rows;
+  canvas._pad    = pad;
+  canvas._groupW = groupW;
+  canvas._gapG   = gapG;
+  canvas.onmousemove = e => breakdownHover(e, canvas);
+  canvas.onmouseleave = () => TT.classList.remove('visible');
+}
+
+function breakdownHover(e, canvas) {
+  const rect  = canvas.getBoundingClientRect();
+  const mx    = e.clientX - rect.left;
+  const rows  = canvas._rows;
+  const pad   = canvas._pad;
+  const gW    = canvas._groupW;
+  const gG    = canvas._gapG;
+
+  const rel = mx - pad.left;
+  const gi  = Math.floor(rel / (gW + gG));
+  if (gi < 0 || gi >= rows.length) { TT.classList.remove('visible'); return; }
+  const row = rows[gi];
+  const t   = rowTotal(row);
+
+  TT.classList.add('visible');
+  TT.style.left = (e.clientX + 14) + 'px';
+  TT.style.top  = (e.clientY - 10) + 'px';
+  document.getElementById('tt-title').textContent = rowDate(row) || `Sub ${gi+1}`;
+  document.getElementById('tt-body').innerHTML =
+    `<div class="tooltip-row"><span class="tooltip-key">Total</span><span class="tooltip-val" style="color:${isPassing(t)?'#22c55e':'#ef4444'}">${t} / 75</span></div>` +
+    CATS.map(c => `<div class="tooltip-row"><span class="tooltip-key" style="color:${c.color}">${c.key} ${c.name}</span><span class="tooltip-val">${Number(row[c.key])||0} / ${CAT_MAX}</span></div>`).join('');
+}
+
+function drawEmpty(ctx, w, h, msg) {
+  ctx.fillStyle = '#4a5268';
+  ctx.font = '13px system-ui';
+  ctx.textAlign = 'center';
+  ctx.fillText(msg, w/2, h/2);
+}
+
+/* ══════════════════════════════════════════════
+   VIEW ROUTER
+══════════════════════════════════════════════ */
+function showView(name) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById('view-' + name).classList.add('active');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+/* ══════════════════════════════════════════════
+   EVENTS
+══════════════════════════════════════════════ */
+document.querySelectorAll('[data-filter]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('[data-filter]').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    filterState = btn.dataset.filter;
+    renderGrid();
+  });
+});
+
+document.getElementById('sort-select').addEventListener('change', e => {
+  sortState = e.target.value;
+  renderGrid();
+});
+
+document.getElementById('back-btn').addEventListener('click', () => {
+  showView('overview');
+  currentStore = null;
+  // Redraw charts on any resize that happened
+});
+
+/* Resize → redraw active charts */
+let resizeTimer;
+window.addEventListener('resize', () => {
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(() => {
+    if (currentStore) {
+      const rows = storeMap[currentStore] || [];
+      renderTrendChart(rows);
+      renderBreakdownChart(rows);
+    }
+  }, 200);
+});
+
+/* ══════════════════════════════════════════════
+   UTILS
+══════════════════════════════════════════════ */
+function escHtml(str) {
+  return String(str)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+/* ══════════════════════════════════════════════
+   DEMO DATA (used when API_URL is placeholder)
+══════════════════════════════════════════════ */
+function loadDemoData() {
+  console.warn('API_URL not set — loading demo data');
+  setStatus('ok', 'Demo mode');
+  document.getElementById('last-updated').textContent = 'Demo data';
+
+  // Demo data mirrors your actual Google Sheet structure
+  allData = [
+    { storeName:'#206 - Imagine Cannabis - White Rock', 'Date:':'6/1/2026', 'B - Begin With Greeting':10, 'L – Learn the Customer':12, 'U – Understand Needs: ':11, 'N – Narrow Recommendation: ':14, 'T – Transition to Close: ':13, 'Observer Name:':'KT', 'Store Manager Name:':'KT', 'What was working well in execution of BLUNT model?':'Employees embrace the greeting well', 'Where execution deviated from expected standard?':'Transitions need work', '  Leadership presence (Scale 1–5)  ':3, 'Is coaching happening in real time?':'Yes', 'Model reinforcement observed':'Yes', 'Overall summary of store execution in 2–3 sentences':'Strong opening interactions. Team engaged well on floor.' },
+    { storeName:'#206 - Imagine Cannabis - White Rock', 'Date:':'6/6/2026', 'B - Begin With Greeting':15, 'L – Learn the Customer':15, 'U – Understand Needs: ':15, 'N – Narrow Recommendation: ':15, 'T – Transition to Close: ':15, 'Observer Name:':'Gavin', 'Store Manager Name:':'KT', 'What was working well in execution of BLUNT model?':'Full model execution observed', 'Where execution deviated from expected standard?':'Nothing noted', '  Leadership presence (Scale 1–5)  ':5, 'Is coaching happening in real time?':'Yes', 'Model reinforcement observed':'Yes', 'Overall summary of store execution in 2–3 sentences':'Exceptional visit. Full BLUNT model in use across all staff.', 'Improvement Action #1:':'Maintain consistency during peak hours' },
+    { storeName:'#206 - Imagine Cannabis - White Rock', 'Date:':'6/8/2026', 'B - Begin With Greeting':10, 'L – Learn the Customer':10, 'U – Understand Needs: ':10, 'N – Narrow Recommendation: ':10, 'T – Transition to Close: ':10, 'Observer Name:':'Gavin', 'Store Manager Name:':'KT', '  Leadership presence (Scale 1–5)  ':3, 'Is coaching happening in real time?':'No', 'Model reinforcement observed':'Yes', 'Overall summary of store execution in 2–3 sentences':'Scores dropped vs last visit. Coaching plan needed.' },
+    { storeName:'#207 - Imagine Cannabis - Newton',     'Date:':'6/1/2026', 'B - Begin With Greeting':14, 'L – Learn the Customer':14, 'U – Understand Needs: ':14, 'N – Narrow Recommendation: ':14, 'T – Transition to Close: ':14, 'Observer Name:':'KY', 'Store Manager Name:':'KY', '  Leadership presence (Scale 1–5)  ':5, 'Is coaching happening in real time?':'Yes', 'Model reinforcement observed':'Yes', 'Overall summary of store execution in 2–3 sentences':'Strong performance across all categories.' },
+    { storeName:'#207 - Imagine Cannabis - Newton',     'Date:':'6/6/2026', 'B - Begin With Greeting':10, 'L – Learn the Customer':3,  'U – Understand Needs: ':15, 'N – Narrow Recommendation: ':15, 'T – Transition to Close: ':15, 'Observer Name:':'Gavin', 'Store Manager Name:':'KY', '  Leadership presence (Scale 1–5)  ':3, 'Is coaching happening in real time?':'Yes', 'Model reinforcement observed':'No', 'Overall summary of store execution in 2–3 sentences':'L score dropped significantly. Focus area for next visit.', 'Improvement Action #1:':'Improve Learn phase — ask deeper discovery questions', 'Improvement Action #2:':'Manager to shadow and coach L step daily' },
+    { storeName:'#202 - Imagine Cannabis - Ladner',     'Date:':'6/1/2026', 'B - Begin With Greeting':12, 'L – Learn the Customer':13, 'U – Understand Needs: ':14, 'N – Narrow Recommendation: ':15, 'T – Transition to Close: ':15, 'Observer Name:':'Gavin', 'Store Manager Name:':'Gavin', '  Leadership presence (Scale 1–5)  ':3, 'Is coaching happening in real time?':'Yes', 'Model reinforcement observed':'Yes' },
+    { storeName:'#202 - Imagine Cannabis - Ladner',     'Date:':'6/7/2026', 'B - Begin With Greeting':14, 'L – Learn the Customer':12, 'U – Understand Needs: ':8,  'N – Narrow Recommendation: ':6,  'T – Transition to Close: ':9,  'Observer Name:':'Gavin', 'Store Manager Name:':'Gavin', '  Leadership presence (Scale 1–5)  ':4, 'Is coaching happening in real time?':'Yes', 'Model reinforcement observed':'Yes', 'Improvement Action #1:':'Narrow and Transition need structured practice', 'Overall summary of store execution in 2–3 sentences':'Regression in U/N/T. Immediate action plan required.' },
+    { storeName:'#203 - Imagine Cannabis - Tsawwassen', 'Date:':'6/1/2026', 'B - Begin With Greeting':15, 'L – Learn the Customer':15, 'U – Understand Needs: ':15, 'N – Narrow Recommendation: ':15, 'T – Transition to Close: ':15, 'Observer Name:':'Gavin', 'Store Manager Name:':'Gavin', '  Leadership presence (Scale 1–5)  ':2, 'Is coaching happening in real time?':'No', 'Model reinforcement observed':'No', 'Overall summary of store execution in 2–3 sentences':'Perfect scores but leadership engagement low — scores may not be sustained.' },
+    { storeName:'#203 - Imagine Cannabis - Tsawwassen', 'Date:':'6/9/2026', 'B - Begin With Greeting':10, 'L – Learn the Customer':10, 'U – Understand Needs: ':10, 'N – Narrow Recommendation: ':10, 'T – Transition to Close: ':10, 'Observer Name:':'Gavin', 'Store Manager Name:':'Gavin', '  Leadership presence (Scale 1–5)  ':3, 'Is coaching happening in real time?':'Yes', 'Model reinforcement observed':'Yes', 'Overall summary of store execution in 2–3 sentences':'Scores dropped from last visit as predicted. Leadership coaching increased.' },
+  ];
+
+  storeMap = buildStoreMap(allData);
+  renderOverview();
+}
+
+/* ══════════════════════════════════════════════
+   BOOT
+══════════════════════════════════════════════ */
+if (API_URL === 'REPLACE_WITH_API_URL') {
+  loadDemoData();
+} else {
+  fetchData();
+}
+</script>
+</body>
+</html>
