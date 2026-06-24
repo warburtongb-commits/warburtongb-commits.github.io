@@ -1,7 +1,7 @@
 <!doctype html>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>BLUNT — Store Dashboard</title>
+<title>BLUNT — Store KPIs</title>
 <style>
   :root{
     --ink:#15171C; --ink-2:#1B1E24; --surface:#202430; --surface-2:#262B38;
@@ -9,7 +9,7 @@
     --text:#F1EFE8; --muted:#8B92A0; --faint:#5C6371;
     --green:#3DD68C; --green-dim:#1F6B47; --green-glow:rgba(61,214,140,.16);
     --gold:#E0B450; --gold-dim:#5A4A22;
-    --alert:#E5705A; --alert-dim:#5A2C25;
+    --alert:#E5705A;
     --mono:ui-monospace,"SF Mono","Cascadia Code","JetBrains Mono",Menlo,Consolas,monospace;
     --sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
     --r:14px;
@@ -17,34 +17,38 @@
   *{box-sizing:border-box}
   html,body{margin:0}
   body{
-    background:
-      radial-gradient(1200px 600px at 80% -10%, rgba(61,214,140,.05), transparent 60%),
-      var(--ink);
-    color:var(--text); font-family:var(--sans);
-    -webkit-font-smoothing:antialiased; line-height:1.45;
+    background:radial-gradient(1200px 600px at 80% -10%, rgba(61,214,140,.05), transparent 60%), var(--ink);
+    color:var(--text); font-family:var(--sans); -webkit-font-smoothing:antialiased; line-height:1.45;
     padding:22px clamp(14px,4vw,40px) 48px;
   }
   .wrap{max-width:1080px;margin:0 auto}
 
-  /* ---------- top bar ---------- */
-  .topbar{display:flex;flex-wrap:wrap;gap:16px;align-items:flex-end;justify-content:space-between;margin-bottom:22px}
+  .topbar{display:flex;flex-wrap:wrap;gap:16px;align-items:flex-end;justify-content:space-between;margin-bottom:20px}
   .brand{display:flex;flex-direction:column;gap:3px}
   .brand .kicker{font-size:11px;letter-spacing:.28em;text-transform:uppercase;color:var(--green);font-weight:700}
   .brand h1{margin:0;font-size:clamp(20px,3vw,27px);font-weight:680;letter-spacing:-.01em}
   .brand .sub{font-size:13px;color:var(--muted)}
   .brand .sub b{color:var(--text);font-weight:600}
-
   .status{display:flex;flex-direction:column;align-items:flex-end;gap:7px;text-align:right}
-  .pill{display:inline-flex;align-items:center;gap:8px;font-family:var(--mono);font-size:12px;
-    padding:6px 11px;border:1px solid var(--line);border-radius:999px;background:var(--ink-2);color:var(--muted)}
+  .pill{display:inline-flex;align-items:center;gap:8px;font-family:var(--mono);font-size:12px;padding:6px 11px;border:1px solid var(--line);border-radius:999px;background:var(--ink-2);color:var(--muted)}
   .pill.live{color:var(--green);border-color:var(--green-dim);background:var(--green-glow)}
-  .dot{width:7px;height:7px;border-radius:50%;background:currentColor;box-shadow:0 0 0 0 currentColor}
+  .dot{width:7px;height:7px;border-radius:50%;background:currentColor}
   .pill.live .dot{animation:pulse 2.4s ease-out infinite}
   @keyframes pulse{0%{box-shadow:0 0 0 0 var(--green-glow)}70%{box-shadow:0 0 0 7px transparent}100%{box-shadow:0 0 0 0 transparent}}
   .gen{font-size:12px;color:var(--faint);font-family:var(--mono)}
   .gen b{color:var(--muted);font-weight:500}
+  .update-btn{font:inherit;font-size:13px;font-weight:650;color:var(--ink);background:var(--green);border:0;border-radius:9px;padding:9px 15px;cursor:pointer;display:inline-flex;align-items:center;gap:7px}
+  .update-btn:hover{filter:brightness(1.07)}
+  .update-btn:focus-visible{outline:2px solid var(--text);outline-offset:2px}
 
-  /* ---------- store hero ---------- */
+  /* window toggle — the organizing device */
+  .toggle{display:flex;gap:5px;background:var(--ink-2);border:1px solid var(--line);border-radius:12px;padding:5px;margin-bottom:18px;max-width:420px}
+  .toggle button{flex:1;font:inherit;font-weight:650;font-size:14px;color:var(--muted);background:none;border:0;padding:11px;border-radius:8px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;letter-spacing:.01em}
+  .toggle button .rng{font-family:var(--mono);font-size:11px;font-weight:500;color:var(--faint);letter-spacing:0}
+  .toggle button[aria-pressed="true"]{background:var(--surface-2);color:var(--text)}
+  .toggle button[aria-pressed="true"] .rng{color:var(--green)}
+  .toggle button:focus-visible{outline:2px solid var(--green);outline-offset:2px}
+
   .hero{border:1px solid var(--line);border-radius:var(--r);background:linear-gradient(180deg,var(--surface),var(--ink-2));overflow:hidden;margin-bottom:22px}
   .hero-head{display:flex;align-items:center;justify-content:space-between;padding:13px 18px;border-bottom:1px solid var(--line)}
   .hero-head .label{font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);font-weight:700}
@@ -52,28 +56,26 @@
   .kpis{display:grid;grid-template-columns:repeat(3,1fr)}
   .kpi{padding:22px 18px;border-right:1px solid var(--line)}
   .kpi:last-child{border-right:0}
-  .kpi .k-label{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);font-weight:700;display:flex;align-items:center;gap:7px}
-  .kpi .k-val{font-family:var(--mono);font-weight:680;letter-spacing:-.02em;font-variant-numeric:tabular-nums;margin-top:9px;font-size:clamp(30px,5.4vw,46px);line-height:1}
+  .kpi .k-label{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);font-weight:700}
+  .kpi .k-val{font-family:var(--mono);font-weight:680;letter-spacing:-.02em;font-variant-numeric:tabular-nums;margin-top:9px;font-size:clamp(28px,5vw,44px);line-height:1}
   .kpi .k-sub{font-family:var(--mono);font-size:12px;color:var(--faint);margin-top:8px}
   .kpi .k-val .cur,.kpi .k-val .suf{color:var(--muted);font-size:.5em;font-weight:600;letter-spacing:0}
-  .kpi.disc.over .k-val{color:var(--alert)}
-  .hero-foot{display:flex;flex-wrap:wrap;gap:6px 0;border-top:1px solid var(--line)}
+  .hero-foot{display:flex;flex-wrap:wrap;border-top:1px solid var(--line)}
   .stat{flex:1 1 0;min-width:120px;padding:11px 18px;border-right:1px solid var(--line);font-family:var(--mono)}
   .stat:last-child{border-right:0}
   .stat .s-l{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);font-family:var(--sans);font-weight:700}
   .stat .s-v{font-size:16px;margin-top:3px;font-variant-numeric:tabular-nums}
 
-  /* ---------- budtenders ---------- */
   .section-head{display:flex;align-items:center;justify-content:space-between;margin:0 2px 12px}
   .section-head h2{margin:0;font-size:13px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);font-weight:700}
   .sort{display:flex;gap:4px;background:var(--ink-2);border:1px solid var(--line);border-radius:999px;padding:3px}
-  .sort button{font:inherit;font-size:11.5px;font-weight:600;color:var(--muted);background:none;border:0;padding:5px 11px;border-radius:999px;cursor:pointer;letter-spacing:.02em}
+  .sort button{font:inherit;font-size:11.5px;font-weight:600;color:var(--muted);background:none;border:0;padding:5px 11px;border-radius:999px;cursor:pointer}
   .sort button[aria-pressed="true"]{background:var(--surface-2);color:var(--text)}
   .sort button:focus-visible{outline:2px solid var(--green);outline-offset:2px}
 
   .rows{display:flex;flex-direction:column;gap:10px}
-  .row{border:1px solid var(--line);border-radius:var(--r);background:var(--surface);padding:15px 18px;display:grid;
-    grid-template-columns:34px 1fr;gap:0 16px;align-items:center;transition:border-color .15s,transform .15s}
+  .empty{border:1px dashed var(--line-2);border-radius:var(--r);padding:30px;text-align:center;color:var(--muted);font-family:var(--mono);font-size:13px}
+  .row{border:1px solid var(--line);border-radius:var(--r);background:var(--surface);padding:15px 18px;display:grid;grid-template-columns:34px 1fr;gap:0 16px;align-items:center;transition:border-color .15s}
   .row:hover{border-color:var(--line-2)}
   .row.lead{border-color:var(--gold-dim);background:linear-gradient(180deg,rgba(224,180,80,.06),var(--surface))}
   .rank{font-family:var(--mono);font-size:20px;font-weight:680;color:var(--faint);text-align:center;font-variant-numeric:tabular-nums}
@@ -81,24 +83,22 @@
   .who{grid-column:2;display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
   .who .nm{font-size:16px;font-weight:650;letter-spacing:-.01em}
   .who .crown{font-size:11px;color:var(--gold);font-weight:700;letter-spacing:.08em;text-transform:uppercase}
-  .who .eid{font-family:var(--mono);font-size:11px;color:var(--faint)}
+  .who .sh{font-family:var(--mono);font-size:11px;color:var(--faint)}
   .metrics{grid-column:2;display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:12px}
   .metric .m-l{font-size:10.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--faint);font-weight:700}
   .metric .m-row{display:flex;align-items:baseline;gap:8px;margin-top:3px}
-  .metric .m-v{font-family:var(--mono);font-size:21px;font-weight:650;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+  .metric .m-v{font-family:var(--mono);font-size:20px;font-weight:650;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
   .metric .m-v .cur,.metric .m-v .suf{color:var(--muted);font-size:.62em}
   .delta{font-family:var(--mono);font-size:11px;font-weight:600;padding:1px 6px;border-radius:6px;white-space:nowrap}
   .delta.up{color:var(--green);background:var(--green-glow)}
   .delta.down{color:var(--alert);background:rgba(229,112,90,.12)}
   .delta.flat{color:var(--faint);background:var(--ink-2)}
-  .metric.disc.over .m-v{color:var(--alert)}
   .bar{grid-column:2;height:5px;border-radius:999px;background:var(--ink-2);margin-top:14px;overflow:hidden}
   .bar > i{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,var(--green-dim),var(--green));width:0;transition:width .5s ease}
   .row.lead .bar > i{background:linear-gradient(90deg,var(--gold-dim),var(--gold))}
   .foot-line{grid-column:2;font-family:var(--mono);font-size:12px;color:var(--faint);margin-top:11px;font-variant-numeric:tabular-nums}
   .foot-line span{color:var(--muted)}
 
-  /* ---------- data source ---------- */
   .source{margin-top:24px;border:1px solid var(--line);border-radius:var(--r);background:var(--ink-2)}
   .source summary{cursor:pointer;list-style:none;padding:14px 18px;display:flex;align-items:center;justify-content:space-between;font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);font-weight:700}
   .source summary::-webkit-details-marker{display:none}
@@ -108,7 +108,6 @@
   .modes{display:flex;gap:4px;background:var(--ink);border:1px solid var(--line);border-radius:10px;padding:4px;margin:16px 0 14px;flex-wrap:wrap}
   .modes button{flex:1 1 auto;font:inherit;font-size:12.5px;font-weight:600;color:var(--muted);background:none;border:0;padding:9px;border-radius:7px;cursor:pointer}
   .modes button[aria-pressed="true"]{background:var(--surface-2);color:var(--text)}
-  .modes button:focus-visible{outline:2px solid var(--green);outline-offset:2px}
   .panel{display:none;font-size:13px;color:var(--muted)}
   .panel.show{display:block}
   .panel p{margin:0 0 12px;line-height:1.55}
@@ -118,32 +117,24 @@
   input[type=url]:focus{outline:2px solid var(--green);outline-offset:1px;border-color:var(--green-dim)}
   .btn{font:inherit;font-size:13px;font-weight:600;color:var(--ink);background:var(--green);border:0;border-radius:8px;padding:10px 16px;cursor:pointer}
   .btn:hover{filter:brightness(1.06)}
-  .btn:focus-visible{outline:2px solid var(--text);outline-offset:2px}
   .btn.ghost{background:none;color:var(--text);border:1px solid var(--line-2)}
   .controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:16px;padding-top:16px;border-top:1px solid var(--line)}
   .controls label{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:7px}
-  select,input[type=number]{font-family:var(--mono);font-size:13px;color:var(--text);background:var(--ink);border:1px solid var(--line-2);border-radius:7px;padding:7px 9px}
-  input[type=number]{width:62px}
+  select{font-family:var(--mono);font-size:13px;color:var(--text);background:var(--ink);border:1px solid var(--line-2);border-radius:7px;padding:7px 9px}
   .controls .spacer{flex:1}
-  .err{display:none;margin-top:12px;font-size:12.5px;color:var(--alert);font-family:var(--mono);background:var(--alert-dim);border:1px solid var(--alert);border-radius:8px;padding:10px 12px}
+  .err{display:none;margin-top:12px;font-size:12.5px;color:var(--alert);font-family:var(--mono);background:rgba(229,112,90,.1);border:1px solid var(--alert);border-radius:8px;padding:10px 12px}
   .err.show{display:block}
   input[type=file]{font-size:13px;color:var(--muted)}
   input[type=file]::file-selector-button{font:inherit;font-weight:600;color:var(--text);background:var(--surface-2);border:1px solid var(--line-2);border-radius:7px;padding:8px 12px;margin-right:10px;cursor:pointer}
 
-  .update-btn{font:inherit;font-size:13px;font-weight:650;color:var(--ink);background:var(--green);border:0;border-radius:9px;padding:9px 15px;cursor:pointer;display:inline-flex;align-items:center;gap:7px;box-shadow:0 1px 0 rgba(0,0,0,.3)}
-  .update-btn:hover{filter:brightness(1.07)}
-  .update-btn:focus-visible{outline:2px solid var(--text);outline-offset:2px}
-  .update-btn .ic{font-size:15px;line-height:1}
-
-  #dropZone{position:fixed;inset:0;z-index:50;display:none;align-items:center;justify-content:center;
-    background:rgba(13,15,19,.86);backdrop-filter:blur(3px)}
+  #dropZone{position:fixed;inset:0;z-index:50;display:none;align-items:center;justify-content:center;background:rgba(13,15,19,.86);backdrop-filter:blur(3px)}
   #dropZone.show{display:flex}
   #dropZone .card{border:2px dashed var(--green);border-radius:18px;padding:46px 60px;text-align:center;background:var(--surface)}
-  #dropZone .big{font-size:20px;font-weight:680;color:var(--text)}
+  #dropZone .big{font-size:20px;font-weight:680}
   #dropZone .small{font-size:13px;color:var(--muted);margin-top:8px;font-family:var(--mono)}
 
   @media (max-width:560px){
-    .kpis{grid-template-columns:1fr;}
+    .kpis{grid-template-columns:1fr}
     .kpi{border-right:0;border-bottom:1px solid var(--line)}
     .kpi:last-child{border-bottom:0}
     .stat{flex-basis:50%}
@@ -151,92 +142,87 @@
   @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 
-<div id="dropZone"><div class="card"><div class="big">Drop your Techpos export</div><div class="small">.csv — newest report wins if you drop several</div></div></div>
+<div id="dropZone"><div class="card"><div class="big">Drop your Order Details export</div><div class="small">.csv — duplicate orders are ignored automatically</div></div></div>
 <input type="file" id="globalFile" accept=".csv,text/csv" multiple hidden>
 
 <div class="wrap">
   <div class="topbar">
     <div class="brand">
-      <span class="kicker">BLUNT · Store Dashboard</span>
+      <span class="kicker">BLUNT · Store KPIs</span>
       <h1 id="storeName">Imagine Cannabis #206</h1>
-      <span class="sub" id="storeLoc"><b>White Rock</b> · Store 206</span>
+      <span class="sub"><b>White Rock</b> · Gross sales · ATV · UPT</span>
     </div>
     <div class="status">
-      <button class="update-btn" id="updateBtn"><span class="ic">⟳</span> Update from export</button>
+      <button class="update-btn" id="updateBtn"><span>⟳</span> Update from export</button>
       <span class="pill" id="statusPill"><span class="dot"></span><span id="statusText">Snapshot</span></span>
-      <span class="gen">data as of <b id="genTime">—</b></span>
-      <span class="gen" id="loadedAt"></span>
+      <span class="gen" id="freshLine"></span>
     </div>
+  </div>
+
+  <div class="toggle" role="group" aria-label="Time window">
+    <button data-win="today" aria-pressed="true">Today<span class="rng" id="rngToday">—</span></button>
+    <button data-win="week" aria-pressed="false">This Week<span class="rng" id="rngWeek">—</span></button>
   </div>
 
   <section class="hero" aria-label="Store totals">
     <div class="hero-head">
-      <span class="label">Store · all budtenders</span>
+      <span class="label" id="heroLabel">Store</span>
       <span class="meta" id="heroMeta">—</span>
     </div>
     <div class="kpis">
-      <div class="kpi" id="kAtv"><div class="k-label">ATV</div><div class="k-val" id="vAtv">—</div><div class="k-sub">avg transaction value</div></div>
-      <div class="kpi" id="kUpt"><div class="k-label">UPT</div><div class="k-val" id="vUpt">—</div><div class="k-sub">units per transaction</div></div>
-      <div class="kpi disc" id="kDisc"><div class="k-label">DISC %</div><div class="k-val" id="vDisc">—</div><div class="k-sub" id="discSub">discount ÷ gross</div></div>
+      <div class="kpi"><div class="k-label">Gross sales</div><div class="k-val" id="vGross">—</div><div class="k-sub">total before tax</div></div>
+      <div class="kpi"><div class="k-label">ATV</div><div class="k-val" id="vAtv">—</div><div class="k-sub">avg transaction value</div></div>
+      <div class="kpi"><div class="k-label">UPT</div><div class="k-val" id="vUpt">—</div><div class="k-sub">units per transaction</div></div>
     </div>
     <div class="hero-foot">
-      <div class="stat"><div class="s-l">Orders</div><div class="s-v" id="sOrders">—</div></div>
-      <div class="stat"><div class="s-l">Units</div><div class="s-v" id="sUnits">—</div></div>
-      <div class="stat"><div class="s-l">Gross sales</div><div class="s-v" id="sGross">—</div></div>
-      <div class="stat"><div class="s-l">Discounts</div><div class="s-v" id="sDisc">—</div></div>
-      <div class="stat"><div class="s-l">Tips</div><div class="s-v" id="sTips">—</div></div>
+      <div class="stat"><div class="s-l">Transactions</div><div class="s-v" id="sTx">—</div></div>
+      <div class="stat"><div class="s-l">Units sold</div><div class="s-v" id="sUnits">—</div></div>
+      <div class="stat"><div class="s-l">Budtenders</div><div class="s-v" id="sStaff">—</div></div>
     </div>
   </section>
 
   <div class="section-head">
     <h2>Budtenders</h2>
     <div class="sort" role="group" aria-label="Sort budtenders">
-      <button data-sort="atv" aria-pressed="true">ATV</button>
+      <button data-sort="gross" aria-pressed="true">Gross</button>
+      <button data-sort="atv" aria-pressed="false">ATV</button>
       <button data-sort="upt" aria-pressed="false">UPT</button>
-      <button data-sort="disc" aria-pressed="false">Disc %</button>
-      <button data-sort="orders" aria-pressed="false">Orders</button>
+      <button data-sort="tx" aria-pressed="false">Tx</button>
     </div>
   </div>
   <div class="rows" id="rows"></div>
 
   <details class="source">
-    <summary>Data source &amp; refresh <span class="chev">›</span></summary>
+    <summary>Data source &amp; live link <span class="chev">›</span></summary>
     <div class="source-body">
       <div class="modes" role="group" aria-label="Data source mode">
-        <button data-mode="upload" aria-pressed="true">Upload export</button>
-        <button data-mode="embedded" aria-pressed="false">Current report</button>
-        <button data-mode="url" aria-pressed="false">Auto-link (hourly)</button>
+        <button data-mode="live" aria-pressed="true">Live Google Sheet</button>
+        <button data-mode="upload" aria-pressed="false">Upload export</button>
       </div>
 
-      <div class="panel show" data-panel="upload">
-        <p>Export from Techpos and drop the file anywhere on the page, or pick it below. Drop several at once and the dashboard shows the one with the newest <b>Report Generated</b> time. Re-run whenever you want fresher numbers.</p>
-        <input type="file" id="fileInput" accept=".csv,text/csv" multiple>
-        <div class="err" id="fileErr"></div>
-      </div>
-
-      <div class="panel" data-panel="embedded">
-        <p>This is the report currently loaded. It stays put until you upload a newer export.</p>
-      </div>
-
-      <div class="panel" data-panel="url">
-        <p>Paste the <b>Web app URL</b> from your Techpos bridge script (the Apps Script that serves the newest export from your Drive folder). Once it's linked, exporting from Techpos into that folder is all you do — the dashboard re-fetches on the interval below. A Google Sheets <code>Publish to web → CSV</code> link works here too.</p>
+      <div class="panel show" data-panel="live">
+        <p>This reads your Sheet through an Apps Script web app (the <code>blunt-kpi-api.gs</code> setup). Deploy that script, then paste its <b>/exec</b> URL below. The dashboard re-reads it on the interval you choose, so once you update the Sheet, every screen updates on its own. Completed orders only, and duplicate OrderNumbers are ignored — overlapping week-to-date pastes are safe. (A published <code>output=csv</code> link also works here if you ever need it.)</p>
         <div class="field">
           <input type="url" id="urlInput" placeholder="https://script.google.com/macros/s/..../exec" autocomplete="off" spellcheck="false">
-          <button class="btn" id="urlLoad">Load &amp; auto-refresh</button>
+          <button class="btn" id="urlLoad">Connect &amp; auto-refresh</button>
         </div>
         <div class="err" id="urlErr"></div>
+      </div>
+
+      <div class="panel" data-panel="upload">
+        <p>Drop an Order Details export anywhere on the page, or pick one below. Good for a quick look without the live link.</p>
+        <input type="file" id="fileInput" accept=".csv,text/csv" multiple>
+        <div class="err" id="fileErr"></div>
       </div>
 
       <div class="controls">
         <label>Refresh
           <select id="interval">
+            <option value="5">every 5 min</option>
+            <option value="10" selected>every 10 min</option>
             <option value="15">every 15 min</option>
             <option value="30">every 30 min</option>
-            <option value="60" selected>hourly</option>
           </select>
-        </label>
-        <label>Discount target %
-          <input type="number" id="target" value="3" min="0" step="0.5">
         </label>
         <div class="spacer"></div>
         <span class="gen" id="nextRefresh"></span>
@@ -246,25 +232,762 @@
   </details>
 </div>
 
+<script type="text/csv" id="seed">Report Generated: 6/24/2026 2:54:16 PM
+Employee,PatientId,CreatedDate,OrderNumber,OpenedProducts,SoldProducts,VoidedProducts,CancelledProducts,ReturnedProducts,ApprovalUser,ApprovalType,discountreason,SubTotal,DeliveryFees,PaymentType,OrderComment,OrderProductNotes,DiscountComment,Discount,Taxes,reason,Total,Status,Totalrow,TaxExemptAll,UseFNTax,TipAmount,MemberSavingTotal,PriceMatchPlus,PatientGroupId,PatientGroupName
+Hannah Scott,88150,2026-06-24 11:45:26,4447227,0,2,0,0,0, ,,,13.75,0.00,Credit,,,,0.00,1.65,,15.40,Completed,740,False,False,0,0.00,False,,
+Hannah Scott,147098,2026-06-24 11:43:28,4447206,0,1,0,0,0, ,,,5.95,0.00,Cash,,,,0.00,0.72,,6.67,Completed,740,False,False,0,0.00,False,,
+Hannah Scott,77348,2026-06-24 11:41:55,4447196,0,2,0,0,0, ,,,50.90,0.00,Debit,,Promotion price discount,,1.96,5.88,,54.82,Completed,740,False,False,0,0.00,False,,
+Hannah Scott,145167,2026-06-24 11:26:47,4447080,0,1,0,0,0, ,,,38.95,0.00,Credit,,,,0.00,4.68,,43.63,Completed,740,False,False,0,0.00,False,,
+Gavin Warburton,143003,2026-06-24 11:26:45,4447079,0,1,0,0,0, ,,,86.95,0.00,Debit,,,,0.00,10.44,,97.39,Completed,740,False,False,0,0.00,False,,
+Hannah Scott,193243,2026-06-24 11:25:24,4447071,0,2,0,0,0, ,,,62.90,0.00,Credit,,,,0.00,7.54,,70.44,Completed,740,False,False,0,0.00,False,,
+Hannah Scott,215785,2026-06-24 11:18:44,4447016,0,1,0,0,0, ,,,29.95,0.00,Debit,,,,0.00,3.60,,33.55,Completed,740,False,False,4.03,0.00,False,,
+Gavin Warburton,50075,2026-06-24 11:18:13,4447014,0,4,1,0,0, ,,,101.80,0.00,Debit/Cash,,,,0.00,16.83,,118.63,Completed,740,False,False,0,0.00,False,,
+Hannah Scott,0,2026-06-24 11:17:11,4447005,0,1,0,0,0, ,,,16.95,0.00,Credit,,,,0.00,2.04,,18.99,Completed,740,False,False,0,0,False,,
+Gavin Warburton,108594,2026-06-24 11:13:04,4446965,0,2,2,0,0, ,,,18.90,0.00,Cash,,,,0.00,2.26,,21.16,Completed,740,False,False,0,0.00,False,,
+Hannah Scott,96759,2026-06-24 11:10:02,4446936,0,1,0,0,0, ,,,38.95,0.00,Debit,,,,0.00,10.13,,49.08,Completed,740,False,False,0,0.00,False,,
+Gavin Warburton,0,2026-06-24 11:06:43,4446914,0,1,0,0,0, ,,,10.95,0.00,Cash,,,,0.00,1.32,,12.27,Completed,740,False,False,0,0,False,,
+Hannah Scott,87319,2026-06-24 11:05:40,4446902,0,1,0,0,0, ,,,38.95,0.00,Credit,,,,0.00,10.13,,49.08,Completed,740,False,False,2.00,0.00,False,,
+Hannah Scott,44449,2026-06-24 10:54:46,4446800,0,1,0,0,0, ,,,10.95,0.00,Debit,,,,0.00,1.32,,12.27,Completed,740,False,False,0,0.00,False,,
+Hannah Scott,175384,2026-06-24 10:53:47,4446789,0,1,0,0,0, ,,,47.95,0.00,Credit,,Promotion price discount,,3.96,11.44,,55.43,Completed,740,False,False,0,0.00,False,,
+Hannah Scott,254019,2026-06-24 10:52:17,4446775,0,1,0,0,0, ,,,31.95,0.00,Debit,,,,0.00,8.31,,40.26,Completed,740,False,False,0,0.00,False,,
+Hannah Scott,0,2026-06-24 10:43:46,4446718,0,1,0,0,0, ,,,47.95,0.00,Cash,,Promotion price discount,,3.96,11.44,,55.43,Completed,740,False,False,0,0,False,,
+Hannah Scott,235467,2026-06-24 10:22:20,4446557,0,1,0,0,0, ,,,39.95,0.00,Credit,,,,0.00,10.39,,50.34,Completed,740,False,False,1.00,0.00,False,,
+Hannah Scott,183000,2026-06-24 10:08:26,4446462,0,1,0,0,0, ,,,38.95,0.00,Debit,,,,0.00,10.13,,49.08,Completed,740,False,False,5.00,0.00,False,,
+Hannah Scott,0,2026-06-24 10:07:06,4446450,0,1,0,0,0, ,,,44.95,0.00,Cash,,,,0.00,5.40,,50.35,Completed,740,False,False,0,0,False,,
+Hannah Scott,0,2026-06-24 10:05:21,4446434,0,2,0,0,0, ,,,43.90,0.00,Debit,,,,0.00,5.27,,49.17,Completed,740,False,False,0,0,False,,
+Hannah Scott,0,2026-06-24 09:59:48,4446395,0,1,0,0,0, ,,,37.95,0.00,Cash,,,,0.00,4.56,,42.51,Completed,740,False,False,0,0,False,,
+Hannah Scott,248515,2026-06-24 09:50:23,4446336,0,2,0,0,0, ,,,76.90,0.00,Debit,,Promotion price discount,,2.96,13.78,,87.72,Completed,740,False,False,0,0.00,False,,
+Hannah Scott,151372,2026-06-24 09:34:40,4446227,0,1,0,0,0, ,,,37.95,0.00,Debit,,Promotion price discount,,2.96,9.10,,44.09,Completed,740,False,False,6.62,0.00,False,,
+Gavin Warburton,0,2026-06-24 09:26:16,4446169,0,2,0,0,0, ,,,47.80,0.00,Cash,,,,0.00,5.74,,53.54,Completed,740,False,False,0,0,False,,
+Hannah Scott,0,2026-06-24 09:21:39,4446133,0,1,0,0,0, ,,,8.95,0.00,Credit,,,,0.00,1.08,,10.03,Completed,740,False,False,0,0,False,,
+Hannah Scott,0,2026-06-24 09:19:20,4446113,0,1,0,0,0, ,,,16.95,0.00,Debit,,,,0.00,2.04,,18.99,Completed,740,False,False,0,0,False,,
+Gavin Warburton,0,2026-06-24 09:18:25,4446106,0,2,0,0,0, ,,,100.44,0.00,Debit,,,,0.00,12.05,,112.49,Completed,740,False,False,0,0,False,,
+Hannah Scott,105189,2026-06-24 09:18:08,4446103,0,2,0,0,0, ,,,74.90,0.00,Cash,,,,0.00,13.18,,88.08,Completed,740,False,False,0,0.00,False,,
+Gavin Warburton,83708,2026-06-24 09:08:15,4446016,0,1,0,0,0, ,,,35.95,0.00,Debit,,,,0.00,4.32,,40.27,Completed,740,False,False,0,0.00,False,,
+Gavin Warburton,130934,2026-06-24 09:06:58,4446003,0,1,0,0,0, ,,,32.95,0.00,Cash,,,,0.00,3.96,,36.91,Completed,740,False,False,0,0.00,False,,
+Levi Jones,105082,2026-06-23 22:59:07,4445768,0,2,0,0,0, ,,,18.36,0.00,Cash,,,,0.00,2.21,,20.57,Completed,740,False,False,0,9.44,False,,
+Levi Jones,88214,2026-06-23 22:57:16,4445751,0,1,0,0,0, ,,,12.95,0.00,Debit,,,,0.00,1.56,,14.51,Completed,740,False,False,0,0.00,False,,
+Drew Koch,186036,2026-06-23 22:56:30,4445742,0,1,0,0,0, ,,,11.95,0.00,Debit,,,,0.00,1.44,,13.39,Completed,740,False,False,0,0.00,False,,
+Drew Koch,243676,2026-06-23 22:53:18,4445708,0,1,0,0,0, ,,,13.95,0.00,Debit,,,,0.00,1.68,,15.63,Completed,740,False,False,0,0.00,False,,
+Levi Jones,0,2026-06-23 22:53:03,4445706,0,1,0,0,0, ,,,19.95,0.00,Credit,,,,0.00,2.40,,22.35,Completed,740,False,False,2.00,0,False,,
+Drew Koch,86999,2026-06-23 22:49:13,4445658,0,1,0,0,0, ,,,10.95,0.00,Debit,,,,0.00,1.32,,12.27,Completed,740,False,False,0,0.00,False,,
+Levi Jones,149201,2026-06-23 22:47:44,4445645,0,2,0,0,0, ,,,78.90,0.00,Debit/Credit,,,,0.00,20.51,,99.41,Completed,740,False,False,0,0.00,False,,
+Drew Koch,0,2026-06-23 22:47:43,4445644,0,2,0,0,0, ,,,29.90,0.00,Credit,,Promotion price discount,,1.96,3.36,,31.30,Completed,740,False,False,0,0,False,,
+Drew Koch,237612,2026-06-23 22:43:55,4445605,0,1,0,0,0, ,,,46.95,0.00,Cash,,,,0.00,12.21,,59.16,Completed,740,False,False,0,0.00,False,,
+Levi Jones,0,2026-06-23 22:43:11,4445599,0,1,0,0,0, ,,,5.95,0.00,Debit,,,,0.00,0.72,,6.67,Completed,740,False,False,0,0,False,,
+Drew Koch,0,2026-06-23 22:42:21,4445591,0,1,0,0,0, ,,,24.95,0.00,Debit,,,,0.00,3.00,,27.95,Completed,740,False,False,2.80,0,False,,
+Levi Jones,0,2026-06-23 22:38:37,4445556,0,1,0,0,0, ,,,10.95,0.00,Debit,,,,0.00,1.32,,12.27,Completed,740,False,False,0,0,False,,
+Drew Koch,128417,2026-06-23 22:33:39,4445490,0,3,0,0,0, ,,,47.85,0.00,Debit,,,,0.00,5.74,,53.59,Completed,740,False,False,0,0.00,False,,
+Drew Koch,181010,2026-06-23 22:24:50,4445413,0,1,0,0,0, ,,,31.95,0.00,Debit,,,,0.00,8.31,,40.26,Completed,740,False,False,2.00,0.00,False,,
+Levi Jones,0,2026-06-23 22:24:24,4445410,0,2,0,0,0, ,,,29.90,0.00,Credit,,,,0.00,3.59,,33.49,Completed,740,False,False,0,0,False,,
+Levi Jones,256639,2026-06-23 22:18:09,4445360,0,1,0,0,0, ,,,37.95,0.00,Debit/Cash,,Promotion price discount,,2.96,9.10,,44.09,Completed,740,False,False,0,0.00,False,,
+Levi Jones,111510,2026-06-23 22:16:02,4445334,0,1,0,0,0, ,,,15.95,0.00,Cash,,,,0.00,1.92,,17.87,Completed,740,False,False,0,0.00,False,,
+Levi Jones,253000,2026-06-23 22:09:06,4445275,0,1,0,0,0, ,,,31.95,0.00,Cash,,,,0.00,8.31,,40.26,Completed,740,False,False,0,0.00,False,,
+Levi Jones,0,2026-06-23 22:08:08,4445265,0,1,0,0,0, ,,,6.49,0.00,Credit,,,,0.00,0.77,,7.26,Completed,740,False,False,0,0,False,,
+Drew Koch,148699,2026-06-23 22:01:22,4445198,0,1,0,0,0, ,,,40.95,0.00,Cash/Cash,,,,0.00,10.65,,51.60,Completed,740,False,False,0,0.00,False,,
+Levi Jones,194334,2026-06-23 22:00:47,4445192,0,1,0,0,0, ,,,24.49,0.00,Credit,,,,0.00,2.93,,27.42,Completed,740,False,False,2.75,0.00,False,,
+Drew Koch,110147,2026-06-23 21:59:43,4445181,0,2,0,0,0, ,,,13.90,0.00,Credit,,,,0.00,1.67,,15.57,Completed,740,False,False,0,0.00,False,,
+Levi Jones,69884,2026-06-23 21:55:08,4445139,0,1,0,0,0, ,,,17.95,0.00,Debit,,,,0.00,2.16,,20.11,Completed,740,False,False,0,0.00,False,,
+Drew Koch,89137,2026-06-23 21:53:33,4445122,0,1,0,0,0, ,,,31.95,0.00,Debit,,,,0.00,8.31,,40.26,Completed,740,False,False,0,0.00,False,,
+Drew Koch,82648,2026-06-23 21:51:19,4445100,0,1,0,0,0, ,,,18.95,0.00,Debit,,,,0.00,2.28,,21.23,Completed,740,False,False,0,0.00,False,,
+Drew Koch,84700,2026-06-23 21:50:34,4445092,0,1,0,0,0, ,,,37.95,0.00,Credit,,Promotion price discount,,2.96,9.10,,44.09,Completed,740,False,False,0,0.00,False,,
+Drew Koch,144282,2026-06-23 21:49:32,4445079,0,1,0,0,0, ,,,8.95,0.00,Credit,,,,0.00,1.08,,10.03,Completed,740,False,False,0,0.00,False,,
+Levi Jones,0,2026-06-23 21:44:52,4445040,0,1,0,0,0, ,,,37.95,0.00,StoreCredit/Credit,,Promotion price discount,,2.96,9.10,,44.09,Completed,740,False,False,0,0,False,,
+Drew Koch,84484,2026-06-23 21:43:48,4445034,0,1,0,0,0, ,,,12.95,0.00,Credit,,,,0.00,1.56,,14.51,Completed,740,False,False,0,0.00,False,,
+Drew Koch,209411,2026-06-23 21:41:41,4445012,0,1,1,0,0, ,,,5.95,0.00,Cash,,,,0.00,0.72,,6.67,Completed,740,False,False,0,0.00,False,,
+Drew Koch,141272,2026-06-23 21:37:01,4444952,0,2,0,0,0, ,,,47.90,0.00,Debit,,,,0.00,10.36,,58.26,Completed,740,False,False,0,0.00,False,,
+Drew Koch,87245,2026-06-23 21:30:27,4444897,0,3,0,0,0, ,,,55.85,0.00,Credit,,Promotion price discount,,1.96,11.50,,65.39,Completed,740,False,False,1.50,0.00,False,,
+Drew Koch,247011,2026-06-23 21:27:37,4444864,0,1,0,0,0, ,,,18.95,0.00,Debit,,,,0.00,2.28,,21.23,Completed,740,False,False,0,0.00,False,,
+Drew Koch,250508,2026-06-23 21:25:56,4444849,0,2,0,0,0, ,,,17.90,0.00,Cash,,,,0.00,2.15,,20.05,Completed,740,False,False,0,0.00,False,,
+Drew Koch,94196,2026-06-23 21:21:33,4444810,0,1,0,0,0, ,,,13.95,0.00,Debit,,,,0.00,1.68,,15.63,Completed,740,False,False,0,0.00,False,,
+Levi Jones,255086,2026-06-23 21:19:43,4444797,0,1,0,0,0, ,,,23.95,0.00,Cash,,,,0.00,2.88,,26.83,Completed,740,False,False,0,0.00,False,,
+Levi Jones,131859,2026-06-23 21:14:54,4444745,0,3,0,0,0, ,,,50.85,0.00,Credit,,,,0.00,11.55,,62.40,Completed,740,False,False,0,0.00,False,,
+Drew Koch,179957,2026-06-23 21:08:48,4444692,0,3,0,0,0, ,,,35.85,0.00,Credit,,,,0.00,4.30,,40.15,Completed,740,False,False,4.02,0.00,False,,
+Levi Jones,0,2026-06-23 21:07:07,4444677,0,1,0,0,0, ,,,24.49,0.00,Cash,,,,0.00,2.93,,27.42,Completed,740,False,False,0,0,False,,
+Levi Jones,0,2026-06-23 21:06:24,4444668,0,1,0,0,0, ,,,23.95,0.00,Credit,,,,0.00,2.88,,26.83,Completed,740,False,False,0,0,False,,
+Levi Jones,0,2026-06-23 21:05:30,4444658,0,1,0,0,0, ,,,1.95,0.00,Credit,,,,0.00,0.24,,2.19,Completed,740,False,False,0,0,False,,
+Levi Jones,0,2026-06-23 21:04:46,4444651,0,1,0,0,0, ,,,11.95,0.00,Credit,,,,0.00,1.44,,13.39,Completed,740,False,False,0,0,False,,
+Levi Jones,94077,2026-06-23 21:01:06,4444612,0,1,0,0,0, ,,,5.95,0.00,Debit,,,,0.00,0.72,,6.67,Completed,740,False,False,0,0.00,False,,
+Drew Koch,110349,2026-06-23 21:00:00,4444606,0,1,0,0,0, ,,,38.95,0.00,Cash,,,,0.00,4.68,,43.63,Completed,740,False,False,0,0.00,False,,
+Levi Jones,188029,2026-06-23 20:59:18,4444603,0,1,0,0,0, ,,,36.95,0.00,Debit,,,,0.00,4.44,,41.39,Completed,740,False,False,0,0.00,False,,
+Drew Koch,0,2026-06-23 20:36:55,4444382,0,2,1,0,0, ,,,36.90,0.00,Cash,,,,0.00,4.42,,41.32,Completed,740,False,False,0,0,False,,
+Drew Koch,0,2026-06-23 20:34:20,4444349,0,1,0,0,0, ,,,14.95,0.00,Debit,,,,0.00,1.80,,16.75,Completed,740,False,False,0,0,False,,
+Levi Jones,91379,2026-06-23 20:33:58,4444345,0,2,0,0,0, ,,,56.44,0.00,Credit,,,,0.00,11.24,,67.68,Completed,740,False,False,0,0.00,False,,
+Levi Jones,82606,2026-06-23 20:30:29,4444300,0,2,0,0,0, ,,,27.90,0.00,Credit,,,,0.00,3.35,,31.25,Completed,740,False,False,0,0.00,False,,
+Levi Jones,0,2026-06-23 20:27:58,4444278,0,1,0,0,0, ,,,10.95,0.00,Cash,,,,0.00,1.32,,12.27,Completed,740,False,False,0,0,False,,
+Levi Jones,189680,2026-06-23 20:26:05,4444266,0,1,0,0,0, ,,,25.99,0.00,Debit,,,,0.00,3.12,,29.11,Completed,740,False,False,0,0.00,False,,
+Levi Jones,0,2026-06-23 20:19:04,4444206,0,2,0,0,0, ,,,13.90,0.00,Debit,,,,0.00,1.67,,15.57,Completed,740,False,False,0,0,False,,
+Drew Koch,176937,2026-06-23 20:18:33,4444199,0,2,0,0,0, ,,,7.90,0.00,Credit,,,,0.00,0.95,,8.85,Completed,740,False,False,0,0.00,False,,
+Levi Jones,0,2026-06-23 20:16:47,4444179,0,1,0,0,0, ,,,23.95,0.00,Credit,,,,0.00,2.88,,26.83,Completed,740,False,False,1.00,0,False,,
+Levi Jones,0,2026-06-23 20:15:46,4444170,0,1,0,0,0, ,,,12.95,0.00,Credit,,,,0.00,1.56,,14.51,Completed,740,False,False,1.00,0,False,,
+Levi Jones,220590,2026-06-23 20:14:51,4444162,0,1,0,0,0, ,,,37.95,0.00,Debit,,Promotion price discount,,2.96,9.10,,44.09,Completed,740,False,False,0,0.00,False,,
+Drew Koch,95457,2026-06-23 20:11:10,4444126,0,4,0,0,0, ,,,59.80,0.00,Debit,,,,0.00,7.18,,66.98,Completed,740,False,False,0,0.00,False,,
+Levi Jones,247128,2026-06-23 20:07:36,4444097,0,3,0,0,0, ,,,102.85,0.00,Cash,,,,0.00,17.93,,120.78,Completed,740,False,False,0,0.00,False,,
+Drew Koch,253440,2026-06-23 20:07:35,4444096,0,3,0,0,0, ,,,86.85,0.00,Credit,,,,0.00,10.42,,97.27,Completed,740,False,False,0,0.00,False,,
+Levi Jones,0,2026-06-23 19:58:39,4444015,0,3,0,0,0, ,,,96.85,0.00,Debit,,,,0.00,11.62,,108.47,Completed,740,False,False,0,0,False,,
+Levi Jones,183771,2026-06-23 19:52:56,4443966,0,2,0,0,0, ,,,48.90,0.00,Cash,,,,0.00,5.86,,54.76,Completed,740,False,False,0,0.00,False,,
+Drew Koch,0,2026-06-23 19:41:39,4443849,0,1,0,0,0, ,,,5.95,0.00,Credit,,,,0.00,0.72,,6.67,Completed,740,False,False,0,0,False,,
+Drew Koch,114428,2026-06-23 19:34:54,4443778,0,2,0,0,0, ,,,32.90,0.00,Credit,,,,0.00,3.94,,36.84,Completed,740,False,False,1.00,0.00,False,,
+Levi Jones,148402,2026-06-23 19:31:48,4443754,0,1,0,0,0, ,,,31.95,0.00,Debit,,,,0.00,8.31,,40.26,Completed,740,False,False,0,0.00,False,,
+Levi Jones,0,2026-06-23 19:27:09,4443705,0,1,0,0,0, ,,,4.20,0.00,Credit,,,,0.00,0.50,,4.70,Completed,740,False,False,0,0,False,,
+Drew Koch,0,2026-06-23 19:26:26,4443698,0,1,0,0,0, ,,,12.95,0.00,Credit,,,,0.00,1.56,,14.51,Completed,740,False,False,0,0,False,,
+Levi Jones,212278,2026-06-23 19:26:04,4443690,0,2,0,0,0, ,,,78.90,0.00,Credit,,,,0.00,15.76,,94.66,Completed,740,False,False,0,0.00,False,,
+Drew Koch,45374,2026-06-23 19:25:26,4443686,0,1,0,0,0, ,,,87.95,0.00,Cash,,,,0.00,10.56,,98.51,Completed,740,False,False,0,0.00,False,,
+Levi Jones,0,2026-06-23 19:23:48,4443672,0,1,0,0,0, ,,,27.95,0.00,Debit,,,,0.00,3.36,,31.31,Completed,740,False,False,0,0,False,,
+Levi Jones,185343,2026-06-23 19:17:17,4443603,0,1,0,0,0, ,,,38.95,0.00,Debit,,Promotion price discount,,1.96,9.62,,46.61,Completed,740,False,False,0,0.00,False,,
+Levi Jones,95927,2026-06-23 19:09:37,4443520,0,1,0,0,0, ,,,38.95,0.00,Cash,,,,0.00,10.13,,49.08,Completed,740,False,False,0,0.00,False,,
+Drew Koch,234824,2026-06-23 19:08:27,4443502,0,2,0,0,0, ,,,64.90,0.00,Debit,,,,0.00,7.78,,72.68,Completed,740,False,False,0,0.00,False,,
+Levi Jones,209073,2026-06-23 19:08:24,4443501,0,1,0,0,0, ,,,38.95,0.00,Debit,,,,0.00,4.68,,43.63,Completed,740,False,False,0,0.00,False,,
+Drew Koch,186338,2026-06-23 19:05:22,4443475,0,12,0,0,0, ,,,224.30,0.00,Debit,,,,0.00,26.92,,251.22,Completed,740,False,False,0,0.00,False,,
+Drew Koch,91287,2026-06-23 18:59:07,4443408,0,1,0,0,0, ,,,32.95,0.00,Debit,,,,0.00,8.57,,41.52,Completed,740,False,False,0,0.00,False,,
+Levi Jones,0,2026-06-23 18:48:38,4443297,0,2,0,0,0, ,,,15.90,0.00,Cash,,,,0.00,1.91,,17.81,Completed,740,False,False,0,0,False,,
+Levi Jones,87793,2026-06-23 18:47:39,4443281,0,2,0,0,0, ,,,37.80,0.00,Credit,,,,0.00,4.54,,42.34,Completed,740,False,False,0,0.00,False,,
+Levi Jones,0,2026-06-23 18:44:53,4443251,0,1,0,0,0, ,,,15.95,0.00,Debit,,,,0.00,1.92,,17.87,Completed,740,False,False,2.00,0,False,,
+Levi Jones,0,2026-06-23 18:41:27,4443211,0,2,0,0,0, ,,,53.90,0.00,Cash,,,,0.00,11.78,,65.68,Completed,740,False,False,0,0,False,,
+Drew Koch,86803,2026-06-23 18:39:49,4443198,0,1,0,0,0, ,,,17.95,0.00,Debit,,,,0.00,2.16,,20.11,Completed,740,False,False,0,0.00,False,,
+Levi Jones,152414,2026-06-23 18:39:15,4443191,0,2,0,0,0, ,,,8.40,0.00,Credit,,,,0.00,1.01,,9.41,Completed,740,False,False,0,0.00,False,,
+Levi Jones,129891,2026-06-23 18:36:48,4443163,0,3,0,0,0, ,,,82.85,0.00,Cash,,,,0.00,9.94,,92.79,Completed,740,False,False,0,0.00,False,,
+Levi Jones,0,2026-06-23 18:35:16,4443145,0,1,0,0,0, ,,,44.95,0.00,Debit,,,,0.00,5.40,,50.35,Completed,740,False,False,0,0,False,,
+Levi Jones,0,2026-06-23 18:34:24,4443132,0,1,0,0,0, ,,,13.95,0.00,Debit,,,,0.00,1.68,,15.63,Completed,740,False,False,0,0,False,,
+Levi Jones,0,2026-06-23 18:33:02,4443119,0,1,0,0,0, ,,,33.95,0.00,Cash,,,,0.00,4.08,,38.03,Completed,740,False,False,0,0,False,,
+Levi Jones,0,2026-06-23 18:23:29,4443024,0,2,0,0,0, ,,,13.90,0.00,Credit,,,,0.00,1.67,,15.57,Completed,740,False,False,0,0,False,,
+Drew Koch,149262,2026-06-23 18:22:52,4443015,0,1,0,0,0, ,,,44.95,0.00,Debit,,,,0.00,11.69,,56.64,Completed,740,False,False,0,0.00,False,,
+Drew Koch,0,2026-06-23 18:20:24,4442989,0,1,0,0,0, ,,,23.95,0.00,Debit,,,,0.00,2.88,,26.83,Completed,740,False,False,0,0,False,,
+Levi Jones,47776,2026-06-23 18:17:46,4442960,0,3,0,0,0, ,,,47.80,0.00,Credit,,,Alpine IQ Discount,4.79,8.93,,51.94,Completed,740,False,False,0,-5.35,False,,
+Drew Koch,91258,2026-06-23 18:16:45,4442948,0,1,0,0,0, ,,,24.95,0.00,Credit,,,,0.00,3.00,,27.95,Completed,740,False,False,0,0.00,False,,
+Drew Koch,110176,2026-06-23 18:13:39,4442912,0,1,0,0,0, ,,,33.95,0.00,Debit,,,,0.00,4.08,,38.03,Completed,740,False,False,0,0.00,False,,
+Levi Jones,228632,2026-06-23 18:13:04,4442902,0,1,0,0,0, ,,,29.95,0.00,Debit,,,,0.00,3.60,,33.55,Completed,740,False,False,3.36,0.00,False,,
+Drew Koch,99448,2026-06-23 18:12:05,4442895,0,1,0,0,0, ,,,32.95,0.00,Credit,,,,0.00,8.57,,41.52,Completed,740,False,False,0,0.00,False,,
+Drew Koch,190787,2026-06-23 18:04:45,4442800,0,2,0,0,0, ,,,87.90,0.00,Credit,,,,0.00,22.85,,110.75,Completed,740,False,False,11.08,0.00,False,,
+Levi Jones,87815,2026-06-23 18:03:20,4442782,0,1,0,0,0, ,,,12.95,0.00,Cash,,,,0.00,1.56,,14.51,Completed,740,False,False,0,0.00,False,,
+Drew Koch,189217,2026-06-23 18:02:25,4442771,0,1,0,0,0, ,,,37.95,0.00,Debit,,,,0.00,4.56,,42.51,Completed,740,False,False,0,0.00,False,,
+Levi Jones,87815,2026-06-23 18:01:52,4442767,0,1,0,0,0, ,,,24.95,0.00,Cash,,,,0.00,3.00,,27.95,Completed,740,False,False,0,0.00,False,,
+Drew Koch,213329,2026-06-23 18:00:46,4442756,0,1,0,0,0, ,,,37.95,0.00,Credit,,Promotion price discount,,2.96,9.10,,44.09,Completed,740,False,False,0,0.00,False,,
+Levi Jones,185616,2026-06-23 18:00:17,4442747,0,2,0,0,0, ,,,42.44,0.00,Credit,,,,0.00,5.09,,47.53,Completed,740,False,False,1.00,0.00,False,,
+Levi Jones,0,2026-06-23 17:52:57,4442655,0,1,0,0,0, ,,,40.95,0.00,Credit,,,,0.00,10.65,,51.60,Completed,740,False,False,0,0,False,,
+Drew Koch,0,2026-06-23 17:52:14,4442644,0,1,0,0,0, ,,,12.95,0.00,Debit,,,,0.00,1.56,,14.51,Completed,740,False,False,0,0,False,,
+Levi Jones,186143,2026-06-23 17:51:21,4442628,0,2,0,0,0, ,,,15.90,0.00,Debit,,,,0.00,1.91,,17.81,Completed,740,False,False,0,0.00,False,,
+Drew Koch,96980,2026-06-23 17:51:19,4442627,0,1,0,0,0, ,,,39.95,0.00,Credit,,,,0.00,4.80,,44.75,Completed,740,False,False,4.48,0.00,False,,
+Levi Jones,106011,2026-06-23 17:48:58,4442601,0,1,0,0,0, ,,,25.90,0.00,Cash,,,,0.00,3.11,,29.01,Completed,740,False,False,0,0.00,False,,
+Drew Koch,116138,2026-06-23 17:48:24,4442594,0,2,0,0,0, ,,,131.90,0.00,Debit,,,,0.00,15.83,,147.73,Completed,740,False,False,0,0.00,False,,
+Levi Jones,103483,2026-06-23 17:46:49,4442574,0,2,0,0,0, ,,,68.90,0.00,Cash,,,,0.00,8.26,,77.16,Completed,740,False,False,0,0.00,False,,
+Drew Koch,92260,2026-06-23 17:45:26,4442557,0,2,0,0,0, ,,,58.90,0.00,Credit,,,,0.00,11.96,,70.86,Completed,740,False,False,0,0.00,False,,
+Levi Jones,141061,2026-06-23 17:43:19,4442532,0,2,0,0,0, ,,,69.75,0.00,Cash,,,,0.00,8.37,,78.12,Completed,740,False,False,0,0.00,False,,
+Levi Jones,185938,2026-06-23 17:42:24,4442517,0,1,0,0,0, ,,,15.95,0.00,Debit,,,,0.00,1.92,,17.87,Completed,740,False,False,0,0.00,False,,
+Drew Koch,129510,2026-06-23 17:41:54,4442510,0,2,0,0,0, ,,,19.80,0.00,Debit,,,,0.00,2.38,,22.18,Completed,740,False,False,2.22,0.00,False,,
+Drew Koch,201037,2026-06-23 17:37:34,4442466,0,1,0,0,0, ,,,18.95,0.00,Credit,,,,0.00,4.93,,23.88,Completed,740,False,False,0,0.00,False,,
+Levi Jones,175083,2026-06-23 17:36:53,4442459,0,1,0,0,0, ,,,6.95,0.00,Debit,,,,0.00,0.84,,7.79,Completed,740,False,False,0,0.00,False,,
+Drew Koch,93810,2026-06-23 17:36:21,4442450,0,1,0,0,0, ,,,38.95,0.00,Debit,,Promotion price discount,,2.96,9.36,,45.35,Completed,740,False,False,6.00,0.00,False,,
+Levi Jones,0,2026-06-23 17:34:23,4442425,0,1,0,0,0, ,,,25.95,0.00,Credit,,,,0.00,6.75,,32.70,Completed,740,False,False,4.91,0,False,,
+Drew Koch,177644,2026-06-23 17:34:03,4442420,0,2,0,0,0, ,,,17.90,0.00,Credit,,,,0.00,2.15,,20.05,Completed,740,False,False,0,0.00,False,,
+Drew Koch,208237,2026-06-23 17:32:59,4442402,0,1,0,0,0, ,,,27.95,0.00,Credit,,,,0.00,3.36,,31.31,Completed,740,False,False,0,0.00,False,,
+Drew Koch,99287,2026-06-23 17:31:20,4442376,0,1,0,0,0, ,,,33.95,0.00,Debit/Debit,,,,0.00,4.08,,38.03,Completed,740,False,False,0,0.00,False,,
+Drew Koch,96467,2026-06-23 17:25:42,4442301,0,1,0,0,0, ,,,23.95,0.00,Debit,,,,0.00,2.88,,26.83,Completed,740,False,False,0,0.00,False,,
+Levi Jones,233101,2026-06-23 17:24:35,4442288,0,2,0,0,0, ,,,58.90,0.00,Debit,,,,0.00,7.06,,65.96,Completed,740,False,False,0,0.00,False,,
+Drew Koch,229251,2026-06-23 17:22:49,4442268,0,2,0,0,0, ,,,51.90,0.00,Debit,,,,0.00,6.23,,58.13,Completed,740,False,False,0,0.00,False,,
+Drew Koch,49322,2026-06-23 17:20:07,4442238,0,1,0,0,0, ,,,31.90,0.00,Credit,,,,0.00,3.83,,35.73,Completed,740,False,False,0,0.00,False,,
+Levi Jones,0,2026-06-23 17:20:05,4442236,0,3,0,0,0, ,,,106.85,0.00,Credit,,,,0.00,19.11,,125.96,Completed,740,False,False,0,0,False,,
+Levi Jones,103912,2026-06-23 17:14:13,4442159,0,2,0,0,0, ,,,154.90,0.00,Credit,,,,0.00,18.58,,173.48,Completed,740,False,False,3.00,0.00,False,,
+Levi Jones,0,2026-06-23 17:12:11,4442127,0,3,0,0,0, ,,,200.80,0.00,Cash,,,,0.00,24.10,,224.90,Completed,740,False,False,0,0,False,,
+Drew Koch,91633,2026-06-23 17:09:07,4442096,0,2,0,0,0, ,,,30.90,0.00,Debit,,,,0.00,7.34,,38.24,Completed,740,False,False,0,0.00,False,,
+Drew Koch,0,2026-06-23 17:08:57,4442094,0,1,0,0,0, ,,,8.95,0.00,Credit,,,,0.00,1.08,,10.03,Completed,740,False,False,0,0,False,,
+Drew Koch,0,2026-06-23 17:04:36,4442038,0,1,0,0,0, ,,,38.95,0.00,Credit,,,,0.00,4.68,,43.63,Completed,740,False,False,0,0,False,,
+Levi Jones,189752,2026-06-23 16:56:05,4441923,0,3,0,0,0, ,,,69.85,0.00,Debit,,,,0.00,8.38,,78.23,Completed,740,False,False,0,0.00,False,,
+Drew Koch,230357,2026-06-23 16:55:50,4441918,0,1,0,0,0, ,,,37.95,0.00,Debit,,Promotion price discount,,2.96,9.10,,44.09,Completed,740,False,False,6.62,0.00,False,,
+Drew Koch,117107,2026-06-23 16:51:49,4441869,0,1,0,0,0, ,,,25.95,0.00,Credit,,,,0.00,3.12,,29.07,Completed,740,False,False,0,0.00,False,,
+Levi Jones,102084,2026-06-23 16:48:59,4441828,0,3,0,0,0, ,,,95.85,0.00,Debit,,Promotion price discount,,1.96,11.26,,105.15,Completed,740,False,False,0,0.00,False,,
+Drew Koch,104664,2026-06-23 16:46:05,4441796,0,1,0,0,0, ,,,29.95,0.00,Cash,,Promotion price discount,,1.96,3.36,,31.35,Completed,740,False,False,0,0.00,False,,
+Levi Jones,96496,2026-06-23 16:45:04,4441772,0,3,0,0,0, ,,,74.70,0.00,Debit,,,,0.00,8.97,,83.67,Completed,740,False,False,8.37,0.00,False,,
+Drew Koch,174603,2026-06-23 16:43:47,4441754,0,1,0,0,0, ,,,38.95,0.00,Debit,,,,0.00,10.13,,49.08,Completed,740,False,False,0,0.00,False,,
+Drew Koch,0,2026-06-23 16:41:06,4441717,0,1,0,0,0, ,,,29.99,0.00,Debit,,,,0.00,3.60,,33.59,Completed,740,False,False,0,0,False,,
+Drew Koch,87883,2026-06-23 16:35:17,4441646,0,1,0,0,0, ,,,4.01,0.00,Debit,,,,0.00,0.48,,4.49,Completed,740,False,False,0,1.94,False,,
+Drew Koch,0,2026-06-23 16:34:47,4441638,0,1,0,0,0, ,,,13.95,0.00,Credit,,,,0.00,1.68,,15.63,Completed,740,False,False,0,0,False,,
+Levi Jones,50505,2026-06-23 16:26:05,4441534,0,2,0,0,0, ,,,83.90,0.00,Credit,,,,0.00,21.81,,105.71,Completed,740,False,False,5.29,0.00,False,,
+Drew Koch,109859,2026-06-23 16:25:01,4441515,0,4,0,0,0, ,,,23.80,0.00,Credit,,,,0.00,2.86,,26.66,Completed,740,False,False,0,0.00,False,,
+Drew Koch,180092,2026-06-23 16:20:34,4441464,0,1,0,0,0, ,,,36.95,0.00,Debit,,,,0.00,4.44,,41.39,Completed,740,False,False,0,0.00,False,,
+Levi Jones,225767,2026-06-23 16:19:16,4441442,0,2,0,0,0, ,,,33.90,0.00,Debit,,,,0.00,4.07,,37.97,Completed,740,False,False,0,0.00,False,,
+Drew Koch,0,2026-06-23 16:18:44,4441433,0,1,0,0,0, ,,,38.95,0.00,Cash,,,,0.00,10.13,,49.08,Completed,740,False,False,0,0,False,,
+Levi Jones,194287,2026-06-23 16:15:39,4441396,0,1,0,0,0, ,,,17.95,0.00,Debit,,Promotion price discount,,1.96,1.92,,17.91,Completed,740,False,False,0.01,0.00,False,,
+Levi Jones,0,2026-06-23 16:11:10,4441344,0,1,0,0,0, ,,,13.95,0.00,Cash,,,,0.00,1.68,,15.63,Completed,740,False,False,0,0,False,,
+Levi Jones,228541,2026-06-23 16:07:04,4441298,0,1,0,0,0, ,,,12.95,0.00,Cash,,,,0.00,1.56,,14.51,Completed,740,False,False,0,0.00,False,,
+Levi Jones,128361,2026-06-23 16:04:59,4441273,0,2,0,0,0, ,,,28.44,0.00,Credit,,,,0.00,3.41,,31.85,Completed,740,False,False,0,0.00,False,,
+Gavin Warburton,0,2026-06-23 16:04:30,4441266,0,1,0,0,0, ,,,5.95,0.00,Credit,,,,0.00,0.72,,6.67,Completed,740,False,False,0,0,False,,
+Drew Koch,257920,2026-06-23 16:03:31,4441256,0,1,0,0,0, ,,,15.95,0.00,Credit,,,,0.00,1.92,,17.87,Completed,740,False,False,0,0.00,False,,
+Levi Jones,56323,2026-06-23 16:02:53,4441247,0,2,0,0,0, ,,,34.55,0.00,Cash,,,,0.00,4.15,,38.70,Completed,740,False,False,0,13.89,False,,
+Gavin Warburton,103143,2026-06-23 15:57:41,4441187,0,1,0,0,0, ,,,55.95,0.00,Debit,,,,0.00,14.55,,70.50,Completed,740,False,False,0,0.00,False,,
+Drew Koch,0,2026-06-23 15:56:25,4441179,0,9,0,0,0, ,,,92.55,0.00,Credit,,,,0.00,11.11,,103.66,Completed,740,False,False,0,0,False,,
+Gavin Warburton,92159,2026-06-23 15:54:33,4441160,0,2,0,0,0, ,,,109.90,0.00,Debit,,,,0.00,13.19,,123.09,Completed,740,False,False,0,0.00,False,,
+Levi Jones,0,2026-06-23 15:54:15,4441158,0,3,0,0,0, ,,,72.85,0.00,Debit,,,,0.00,13.91,,86.76,Completed,740,False,False,4.34,0,False,,
+Gavin Warburton,0,2026-06-23 15:52:40,4441140,0,1,0,0,0, ,,,5.95,0.00,Credit,,,,0.00,0.72,,6.67,Completed,740,False,False,0,0,False,,
+Cian Morris-Gracey,0,2026-06-23 15:50:39,4441112,0,2,0,0,0, ,,,7.90,0.00,Credit,,,,0.00,0.95,,8.85,Completed,740,False,False,0,0,False,,
+Levi Jones,88626,2026-06-23 15:50:12,4441109,0,2,0,0,0, ,,,62.90,0.00,Debit,,Promotion price discount,,1.96,7.32,,68.26,Completed,740,False,False,0,0.00,False,,
+Drew Koch,0,2026-06-23 15:47:58,4441077,0,2,0,0,0, ,,,49.90,0.00,Credit,,,,0.00,5.99,,55.89,Completed,740,False,False,5.00,0,False,,
+Levi Jones,0,2026-06-23 15:47:39,4441075,0,2,0,0,0, ,,,58.85,0.00,Debit,,,,0.00,7.06,,65.91,Completed,740,False,False,4.00,0,False,,
+Cian Morris-Gracey,86811,2026-06-23 15:47:09,4441071,0,1,0,0,0, ,,,2.90,0.00,Debit,,,,0.00,0.34,,3.24,Completed,740,False,False,0,2.05,False,,
+Cian Morris-Gracey,0,2026-06-23 15:37:11,4440929,0,1,0,0,0, ,,,18.95,0.00,Cash,,,,0.00,2.28,,21.23,Completed,740,False,False,0,0,False,,
+Cian Morris-Gracey,0,2026-06-23 15:22:55,4440762,0,1,0,0,0, ,,,19.95,0.00,Cash,,,,0.00,2.40,,22.35,Completed,740,False,False,0,0,False,,
+Cian Morris-Gracey,0,2026-06-23 15:20:31,4440734,0,1,0,0,0, ,,,13.95,0.00,Credit,,,,0.00,1.68,,15.63,Completed,740,False,False,0,0,False,,
+Cian Morris-Gracey,209756,2026-06-23 15:17:31,4440708,0,1,0,0,0, ,,,66.95,0.00,Cash/Credit,,,,0.00,8.04,,74.99,Completed,740,False,False,0,0.00,False,,
+Cian Morris-Gracey,0,2026-06-23 15:13:02,4440665,0,1,0,0,0, ,,,17.95,0.00,Cash,,,,0.00,2.16,,20.11,Completed,740,False,False,0,0,False,,
+Cian Morris-Gracey,0,2026-06-23 15:07:59,4440609,0,2,0,0,0, ,,,39.60,0.00,Credit,,,,0.00,4.75,,44.35,Completed,740,False,False,5.00,0,False,,
+Gavin Warburton,0,2026-06-23 15:05:36,4440585,0,1,0,0,0, ,,,124.95,0.00,Debit,,,,0.00,15.00,,139.95,Completed,740,False,False,3.00,0,False,,
+Cian Morris-Gracey,93803,2026-06-23 15:01:44,4440539,0,1,0,0,0, ,,,31.95,0.00,Cash,,,,0.00,8.31,,40.26,Completed,740,False,False,0,0.00,False,,
+Cian Morris-Gracey,0,2026-06-23 14:59:59,4440518,0,5,0,0,0, ,,,71.75,0.00,Credit,,,,0.00,8.61,,80.36,Completed,740,False,False,0,0,False,,
+Gavin Warburton,0,2026-06-23 14:56:29,4440476,0,1,0,0,0, ,,,15.95,0.00,Cash,,,,0.00,1.92,,17.87,Completed,740,False,False,0,0,False,,
+Cian Morris-Gracey,89453,2026-06-23 14:55:27,4440462,0,2,0,0,0, ,,,31.90,0.00,Credit,,,,0.00,3.83,,35.73,Completed,740,False,False,3.58,0.00,False,,
+Cian Morris-Gracey,0,2026-06-23 14:51:40,4440426,0,4,0,0,0, ,,,71.80,0.00,Debit,,Promotion price discount,,2.96,13.30,,82.14,Completed,740,False,False,8.22,0,False,,
+Gavin Warburton,169874,2026-06-23 14:39:18,4440299,0,1,0,0,0, ,,,12.95,0.00,Debit/Cash,,,,0.00,1.56,,14.51,Completed,740,False,False,0,0.00,False,,
+Cian Morris-Gracey,0,2026-06-23 14:38:27,4440292,0,1,0,0,0, ,,,17.95,0.00,Debit,,,,0.00,2.16,,20.11,Completed,740,False,False,0,0,False,,
+Cian Morris-Gracey,239101,2026-06-23 14:34:18,4440256,0,2,0,0,0, ,,,10.90,0.00,Credit,,,,0.00,1.30,,12.20,Completed,740,False,False,2.00,0.00,False,,
+Cian Morris-Gracey,0,2026-06-23 14:32:22,4440238,0,1,0,0,0, ,,,61.95,0.00,Credit,,,,0.00,7.44,,69.39,Completed,740,False,False,0,0,False,,
+Cian Morris-Gracey,187973,2026-06-23 14:20:33,4440128,0,2,0,0,0, ,,,59.90,0.00,Debit,,Promotion price discount,,2.96,11.74,,68.68,Completed,740,False,False,2.00,0.00,False,,
+Gavin Warburton,128634,2026-06-23 14:13:21,4440066,0,2,0,0,0, ,,,65.90,0.00,Credit,,,,0.00,7.91,,73.81,Completed,740,False,False,0,0.00,False,,
+Cian Morris-Gracey,100243,2026-06-23 14:06:50,4440008,0,1,0,0,0, ,,,38.95,0.00,Cash,,,,0.00,4.68,,43.63,Completed,740,False,False,0,0.00,False,,
+Cian Morris-Gracey,0,2026-06-23 14:01:50,4439972,0,1,0,0,0, ,,,27.95,0.00,Credit,,,,0.00,3.36,,31.31,Completed,740,False,False,0,0,False,,
+Cian Morris-Gracey,87211,2026-06-23 14:00:07,4439953,0,1,0,0,0, ,,,17.95,0.00,Cash,,,,0.00,2.16,,20.11,Completed,740,False,False,0,0.00,False,,
+Cian Morris-Gracey,174252,2026-06-23 13:56:15,4439909,0,1,0,0,0, ,,,4.01,0.00,Debit,,,,0.00,0.48,,4.49,Completed,740,False,False,0,1.94,False,,
+Cian Morris-Gracey,0,2026-06-23 13:51:50,4439866,0,1,0,0,0, ,,,12.95,0.00,Cash,,,,0.00,1.56,,14.51,Completed,740,False,False,0,0,False,,
+Cian Morris-Gracey,0,2026-06-23 13:50:54,4439860,0,2,0,0,0, ,,,10.90,0.00,Cash,,,,0.00,1.30,,12.20,Completed,740,False,False,0,0,False,,
+Cian Morris-Gracey,174252,2026-06-23 13:49:27,4439842,0,2,0,0,0, ,,,36.47,0.00,Debit,,,,0.00,4.37,,40.84,Completed,740,False,False,0,15.43,False,,
+Gavin Warburton,215845,2026-06-23 13:45:46,4439811,0,3,2,0,0, ,,,13.18,0.00,Credit,,,,0.00,1.58,,14.76,Completed,740,False,False,0,6.67,False,,
+Cian Morris-Gracey,0,2026-06-23 13:43:23,4439791,0,1,0,0,0, ,,,6.49,0.00,Cash,,,,0.00,0.77,,7.26,Completed,740,False,False,0,0,False,,
+Cian Morris-Gracey,105679,2026-06-23 13:37:28,4439731,0,1,0,0,0, ,,,44.95,0.00,Debit,,,,0.00,11.69,,56.64,Completed,740,False,False,0,0.00,False,,
+Cian Morris-Gracey,0,2026-06-23 13:23:41,4439608,0,1,0,0,0, ,,,29.95,0.00,Debit,,Promotion price discount,,1.96,3.36,,31.35,Completed,740,False,False,0,0,False,,
+Cian Morris-Gracey,247761,2026-06-23 13:22:32,4439597,0,1,0,0,0, ,,,119.95,0.00,Debit,,,,0.00,14.40,,134.35,Completed,740,False,False,0,0.00,False,,
+Cian Morris-Gracey,90062,2026-06-23 13:15:08,4439520,0,1,0,0,0, ,,,38.95,0.00,Credit,,,,0.00,4.68,,43.63,Completed,740,False,False,0,0.00,False,,
+Cian Morris-Gracey,253919,2026-06-23 13:11:23,4439485,0,5,0,0,0, ,,,108.75,0.00,Credit,,,,0.00,22.84,,131.59,Completed,740,False,False,0,0,False,,
+Cian Morris-Gracey,0,2026-06-23 13:09:29,4439469,0,1,0,0,0, ,,,10.95,0.00,Debit,,,,0.00,1.32,,12.27,Completed,740,False,False,0,0,False,,
+Gavin Warburton,74144,2026-06-23 13:09:27,4439468,0,1,0,0,0, ,,,38.95,0.00,Debit,,,,0.00,4.68,,43.63,Completed,740,False,False,1.00,0.00,False,,
+Cian Morris-Gracey,0,2026-06-23 12:58:50,4439389,0,1,0,0,0, ,,,23.95,0.00,Credit,,,,0.00,2.88,,26.83,Completed,740,False,False,0,0,False,,
+Cian Morris-Gracey,0,2026-06-23 12:54:01,4439354,0,1,0,0,0, ,,,38.95,0.00,Debit,,Promotion price discount,,2.96,9.36,,45.35,Completed,740,False,False,0,0,False,,
+Cian Morris-Gracey,0,2026-06-23 12:50:13,4439321,0,2,0,0,0, ,,,40.90,0.00,Credit,,,,0.00,4.90,,45.80,Completed,740,False,False,0,0,False,,
+Cian Morris-Gracey,0,2026-06-23 12:48:45,4439306,0,1,0,0,0, ,,,31.95,0.00,Debit,,,,0.00,8.31,,40.26,Completed,740,False,False,0,0,False,,
+Cian Morris-Gracey,115395,2026-06-23 12:36:01,4439208,0,2,0,0,0, ,,,66.90,0.00,Debit,,Promotion price discount / Promotion price discount,,3.92,7.56,,70.54,Completed,740,False,False,0,0.00,False,,
+Gavin Warburton,257655,2026-06-23 12:35:10,4439202,0,2,0,0,0, ,,,17.90,0.00,Debit,,Promotion price discount / Promotion price discount,,5.92,1.44,,13.42,Completed,740,False,False,0,0.00,False,,
+Cian Morris-Gracey,0,2026-06-23 12:33:40,4439192,0,2,0,0,0, ,,,10.90,0.00,Cash/Debit,,,,0.00,1.30,,12.20,Completed,740,False,False,0,0,False,,
+Gavin Warburton,184317,2026-06-23 12:30:31,4439167,0,1,0,0,0, ,,,10.95,0.00,Cash,,,,0.00,1.32,,12.27,Completed,740,False,False,0,0.00,False,,
+Cian Morris-Gracey,0,2026-06-23 12:26:16,4439129,0,1,0,0,0, ,,,38.95,0.00,Credit,,Promotion price discount,,1.96,4.44,,41.43,Completed,740,False,False,2.00,0,False,,
+Cian Morris-Gracey,141575,2026-06-23 12:22:27,4439092,0,1,0,0,0, ,,,24.95,0.00,Debit,,,,0.00,3.00,,27.95,Completed,740,False,False,0,0.00,False,,
+Gavin Warburton,0,2026-06-23 12:22:20,4439089,0,1,0,0,0, ,,,38.95,0.00,Debit,,,,0.00,10.13,,49.08,Completed,740,False,False,0,0,False,,
+Cian Morris-Gracey,87066,2026-06-23 12:12:36,4439010,0,4,0,0,0, ,,,25.34,0.00,Credit,,,,0.00,3.04,,28.38,Completed,740,False,False,2.00,0.00,False,,
+Gavin Warburton,0,2026-06-23 12:05:14,4438945,0,2,0,0,0, ,,,45.90,0.00,Debit,,,,0.00,5.51,,51.41,Completed,740,False,False,0,0,False,,
+Cian Morris-Gracey,247521,2026-06-23 12:03:07,4438926,0,1,0,0,0, ,,,38.95,0.00,Credit,,,,0.00,4.68,,43.63,Completed,740,False,False,0,0.00,False,,
+Cian Morris-Gracey,77068,2026-06-23 12:00:45,4438908,0,1,0,0,0, ,,,49.95,0.00,Debit,,,,0.00,12.99,,62.94,Completed,740,False,False,0,0.00,False,,
+Cian Morris-Gracey,0,2026-06-23 11:53:39,4438860,0,1,0,0,0, ,,,24.95,0.00,Credit,,,,0.00,3.00,,27.95,Completed,740,False,False,0,0,False,,
+Gavin Warburton,92391,2026-06-23 11:51:59,4438847,0,1,0,0,0, ,,,27.95,0.00,Debit,,,,0.00,3.36,,31.31,Completed,740,False,False,0,0.00,False,,
+Cian Morris-Gracey,0,2026-06-23 11:51:32,4438845,0,1,0,0,0, ,,,32.95,0.00,Credit,,,,0.00,3.96,,36.91,Completed,740,False,False,0,0,False,,
+Gavin Warburton,206042,2026-06-23 11:47:27,4438822,0,1,0,0,0, ,,,39.95,0.00,Debit,,,,0.00,10.39,,50.34,Completed,740,False,False,0,0.00,False,,
+Gavin Warburton,0,2026-06-23 11:44:31,4438803,0,1,0,0,0, ,,,17.95,0.00,Debit,,,,0.00,2.16,,20.11,Completed,740,False,False,0,0,False,,
+Gavin Warburton,114531,2026-06-23 11:42:22,4438786,0,1,0,0,0, ,,,71.95,0.00,Credit,,,,0.00,8.64,,80.59,Completed,740,False,False,0.50,0.00,False,,
+Gavin Warburton,128795,2026-06-23 11:38:32,4438760,0,1,0,0,0, ,,,10.95,0.00,Credit,,,,0.00,1.32,,12.27,Completed,740,False,False,1.23,0.00,False,,
+Gavin Warburton,0,2026-06-23 11:31:21,4438710,0,1,0,0,0, ,,,5.95,0.00,Cash,,,,0.00,0.72,,6.67,Completed,740,False,False,0,0,False,,
+Gavin Warburton,99429,2026-06-23 11:18:19,4438613,0,1,0,0,0, ,,,48.95,0.00,Debit,,,,0.00,5.88,,54.83,Completed,740,False,False,0,0.00,False,,
+Cian Morris-Gracey,128651,2026-06-23 11:09:44,4438566,0,1,0,0,0, ,,,31.95,0.00,Credit,,,,0.00,8.31,,40.26,Completed,740,False,False,1.74,0.00,False,,
+Cian Morris-Gracey,249229,2026-06-23 11:08:23,4438557,0,1,0,0,0, ,,,38.95,0.00,Cash,,,,0.00,10.13,,49.08,Completed,740,False,False,0,0.00,False,,
+Cian Morris-Gracey,0,2026-06-23 11:06:17,4438540,0,1,1,0,0, ,,,5.95,0.00,Cash,,,,0.00,0.72,,6.67,Completed,740,False,False,0,0,False,,
+Cian Morris-Gracey,0,2026-06-23 11:04:27,4438524,0,2,0,0,0, ,,,43.90,0.00,Debit,,,,0.00,5.27,,49.17,Completed,740,False,False,0,0,False,,
+Cian Morris-Gracey,128817,2026-06-23 11:00:59,4438508,0,1,0,0,0, ,,,47.95,0.00,Debit,,Promotion price discount,,3.96,11.44,,55.43,Completed,740,False,False,0,0.00,False,,
+Cian Morris-Gracey,0,2026-06-23 10:58:15,4438495,0,1,0,0,0, ,,,29.99,0.00,Cash,,,,0.00,3.60,,33.59,Completed,740,False,False,0,0,False,,
+Cian Morris-Gracey,58709,2026-06-23 10:55:25,4438477,0,1,0,0,0, ,,,17.95,0.00,Debit,,Promotion price discount,,1.96,1.92,,17.91,Completed,740,False,False,0,0.00,False,,
+Cian Morris-Gracey,140145,2026-06-23 10:18:19,4438242,0,5,0,0,0, ,,,138.75,0.00,Credit,,,,0.00,16.65,,155.40,Completed,740,False,False,0,0.00,False,,
+Cian Morris-Gracey,0,2026-06-23 10:08:07,4438190,0,1,0,0,0, ,,,18.95,0.00,Debit,,,,0.00,2.28,,21.23,Completed,740,False,False,0,0,False,,
+Gavin Warburton,0,2026-06-23 09:49:26,4438087,0,1,0,0,0, ,,,23.95,0.00,Credit,,,,0.00,2.88,,26.83,Completed,740,False,False,1.00,0,False,,
+Cian Morris-Gracey,132440,2026-06-23 09:44:12,4438058,0,2,0,0,0, ,,,71.90,0.00,Credit,,,,0.00,18.69,,90.59,Completed,740,False,False,0,0.00,False,,
+Cian Morris-Gracey,256856,2026-06-23 09:35:15,4438011,0,2,0,0,0, ,,,27.90,0.00,Credit,,,,0.00,3.35,,31.25,Completed,740,False,False,0,0.00,False,,
+Cian Morris-Gracey,101592,2026-06-23 09:14:59,4437913,0,3,0,0,0, ,,,62.85,0.00,Credit,,,,0.00,13.83,,76.68,Completed,740,False,False,11.51,0.00,False,,
+Gavin Warburton,0,2026-06-23 09:13:13,4437904,0,2,0,0,0, ,,,25.90,0.00,Cash,,,,0.00,3.11,,29.01,Completed,740,False,False,0,0,False,,
+Gavin Warburton,110163,2026-06-23 09:11:17,4437897,0,1,0,0,0, ,,,33.95,0.00,Cash,,,,0.00,4.08,,38.03,Completed,740,False,False,0,0.00,False,,
+Gavin Warburton,0,2026-06-23 09:05:20,4437851,0,3,0,0,0, ,,,39.85,0.00,Credit,,,,0.00,4.78,,44.63,Completed,740,False,False,0,0,False,,
+Gavin Warburton,129850,2026-06-23 09:02:16,4437823,0,2,0,0,0, ,,,25.90,0.00,Debit,,,,0.00,3.11,,29.01,Completed,740,False,False,0,0.00,False,,
+Gavin Warburton,0,2026-06-23 08:59:02,4437811,0,1,0,0,0, ,,,5.95,0.00,Debit,,,,0.00,0.72,,6.67,Completed,740,False,False,0,0,False,,
+George Garner,0,2026-06-22 22:59:22,4437656,0,1,0,0,0, ,,,55.95,0.00,Credit,,,,0.00,6.72,,62.67,Completed,740,False,False,0,0,False,,
+George Garner,0,2026-06-22 22:55:30,4437618,0,1,0,0,0, ,,,4.95,0.00,Credit,,,,0.00,0.60,,5.55,Completed,740,False,False,0,0,False,,
+Drew Koch,88214,2026-06-22 22:55:21,4437616,0,1,0,0,0, ,,,12.95,0.00,Debit,,,,0.00,1.56,,14.51,Completed,740,False,False,0,0.00,False,,
+George Garner,186036,2026-06-22 22:52:58,4437592,0,1,0,0,0, ,,,6.49,0.00,Debit,,,,0.00,0.77,,7.26,Completed,740,False,False,0,0.00,False,,
+George Garner,0,2026-06-22 22:47:31,4437526,0,2,0,0,0, ,,,11.90,0.00,Credit,,,,0.00,1.43,,13.33,Completed,740,False,False,0,0,False,,
+George Garner,0,2026-06-22 22:44:39,4437497,0,2,0,0,0, ,,,59.90,0.00,Debit,,Promotion price discount,,1.96,12.84,,70.78,Completed,740,False,False,0,0,False,,
+George Garner,0,2026-06-22 22:41:52,4437467,0,1,0,0,0, ,,,15.95,0.00,Credit,,,,0.00,1.92,,17.87,Completed,740,False,False,1.79,0,False,,
+Drew Koch,90993,2026-06-22 22:41:26,4437460,0,2,0,0,0, ,,,45.90,0.00,Debit,,,,0.00,5.51,,51.41,Completed,740,False,False,0,0.00,False,,
+Drew Koch,194816,2026-06-22 22:30:22,4437368,0,1,1,0,0, ,,,13.95,0.00,Cash,,,,0.00,1.68,,15.63,Completed,740,False,False,0,0.00,False,,
+Drew Koch,93644,2026-06-22 22:27:21,4437345,0,4,0,0,0, ,,,24.56,0.00,Credit/Credit,,,,0.00,2.95,,27.51,Completed,740,False,False,0,14.19,False,,
+Drew Koch,0,2026-06-22 22:18:15,4437249,0,1,0,0,0, ,,,34.95,0.00,Cash,,,,0.00,4.20,,39.15,Completed,740,False,False,0,0,False,,
+George Garner,105655,2026-06-22 22:16:28,4437226,0,1,0,0,0, ,,,12.95,0.00,Debit,,,,0.00,1.56,,14.51,Completed,740,False,False,0,0.00,False,,
+George Garner,128417,2026-06-22 22:15:14,4437213,0,2,0,0,0, ,,,46.90,0.00,Debit,,,,0.00,5.62,,52.52,Completed,740,False,False,0,0.00,False,,
+Drew Koch,0,2026-06-22 22:12:01,4437192,0,1,0,0,0, ,,,24.49,0.00,Cash,,,,0.00,2.93,,27.42,Completed,740,False,False,0,0,False,,
+George Garner,209411,2026-06-22 22:10:36,4437175,0,1,0,0,0, ,,,5.95,0.00,Debit,,,,0.00,0.72,,6.67,Completed,740,False,False,0,0.00,False,,
+George Garner,0,2026-06-22 22:07:59,4437151,0,1,0,0,0, ,,,24.49,0.00,Debit,,,,0.00,2.93,,27.42,Completed,740,False,False,0,0,False,,
+Drew Koch,88869,2026-06-22 22:06:44,4437140,0,2,0,0,0, ,,,84.90,0.00,Debit,,Promotion price discount,,1.96,21.57,,104.51,Completed,740,False,False,0,0.00,False,,
+George Garner,110686,2026-06-22 22:06:06,4437138,0,2,0,0,0, ,,,122.90,0.00,Debit,,,,0.00,14.74,,137.64,Completed,740,False,False,0,0.00,False,,
+Drew Koch,113180,2026-06-22 22:03:49,4437124,0,2,1,0,0, ,,,121.90,0.00,Credit,,,,0.00,14.63,,136.53,Completed,740,False,False,0,0.00,False,,
+Drew Koch,228632,2026-06-22 22:00:49,4437103,0,4,0,0,0, ,,,27.80,0.00,Debit,,,,0.00,3.34,,31.14,Completed,740,False,False,0,0.00,False,,
+George Garner,0,2026-06-22 21:57:48,4437065,0,2,0,0,0, ,,,23.90,0.00,Cash,,,,0.00,2.87,,26.77,Completed,740,False,False,0,0,False,,
+George Garner,0,2026-06-22 21:56:13,4437050,0,1,0,0,0, ,,,17.95,0.00,Debit,,,,0.00,2.16,,20.11,Completed,740,False,False,0,0,False,,
+George Garner,0,2026-06-22 21:54:49,4437037,0,1,0,0,0, ,,,19.95,0.00,Debit,,,,0.00,2.40,,22.35,Completed,740,False,False,0,0,False,,
+George Garner,255086,2026-06-22 21:51:15,4436995,0,1,0,0,0, ,,,24.95,0.00,Cash,,,,0.00,3.00,,27.95,Completed,740,False,False,0,0.00,False,,
+George Garner,0,2026-06-22 21:49:41,4436980,0,1,0,0,0, ,,,16.95,0.00,Debit,,,,0.00,2.04,,18.99,Completed,740,False,False,0,0,False,,
+George Garner,99287,2026-06-22 21:47:00,4436952,0,1,0,0,0, ,,,38.95,0.00,Debit/Debit,,,,0.00,4.68,,43.63,Completed,740,False,False,0,0.00,False,,
+Drew Koch,195127,2026-06-22 21:39:06,4436877,0,1,0,0,0, ,,,12.95,0.00,Debit,,,,0.00,1.56,,14.51,Completed,740,False,False,0,0.00,False,,
+Drew Koch,0,2026-06-22 21:34:22,4436834,0,2,0,0,0, ,,,11.90,0.00,Debit,,,,0.00,1.43,,13.33,Completed,740,False,False,0,0,False,,
+Drew Koch,0,2026-06-22 21:29:45,4436785,0,1,0,0,0, ,,,24.95,0.00,Debit,,,,0.00,3.00,,27.95,Completed,740,False,False,0.10,0,False,,
+Drew Koch,203253,2026-06-22 21:28:22,4436771,0,2,0,0,0, ,,,25.90,0.00,Debit,,,,0.00,3.11,,29.01,Completed,740,False,False,0,0.00,False,,
+Drew Koch,223617,2026-06-22 21:25:20,4436753,0,1,0,0,0, ,,,38.95,0.00,Debit,,Promotion price discount,,1.96,9.62,,46.61,Completed,740,False,False,0,0.00,False,,
+Drew Koch,0,2026-06-22 21:23:34,4436737,0,2,0,0,0, ,,,25.90,0.00,Cash/Cash,,,,0.00,3.11,,29.01,Completed,740,False,False,0,0,False,,
+Drew Koch,146251,2026-06-22 21:22:03,4436719,0,2,0,0,0, ,,,29.90,0.00,Debit,,,,0.00,3.59,,33.49,Completed,740,False,False,0,0.00,False,,
+Drew Koch,0,2026-06-22 21:20:27,4436705,0,1,0,0,0, ,,,17.95,0.00,Debit,,,,0.00,2.16,,20.11,Completed,740,False,False,0,0,False,,
+Drew Koch,89987,2026-06-22 21:18:45,4436691,0,1,0,0,0, ,,,29.95,0.00,Debit/Cash,,,,0.00,3.60,,33.55,Completed,740,False,False,0,0.00,False,,
+Drew Koch,0,2026-06-22 21:13:42,4436637,0,2,0,0,0, ,,,14.90,0.00,Debit,,,,0.00,1.78,,16.68,Completed,740,False,False,0,0,False,,
+Drew Koch,0,2026-06-22 21:12:09,4436627,0,2,0,0,0, ,,,20.90,0.00,Debit,,,,0.00,2.50,,23.40,Completed,740,False,False,0,0,False,,
+Drew Koch,114834,2026-06-22 21:10:03,4436603,0,2,0,0,0, ,,,98.90,0.00,Credit,,,,0.00,11.86,,110.76,Completed,740,False,False,0,0.00,False,,
+George Garner,61750,2026-06-22 21:05:48,4436561,0,1,1,0,0, ,,,94.95,0.00,Cash,,,,0.00,11.40,,106.35,Completed,740,False,False,0,0.00,False,,
+George Garner,90653,2026-06-22 21:03:59,4436539,0,2,0,0,0, ,,,40.90,0.00,Credit,,Promotion price discount,,1.96,4.68,,43.62,Completed,740,False,False,0,0.00,False,,
+Drew Koch,202009,2026-06-22 21:03:07,4436530,0,2,0,0,0, ,,,69.90,0.00,Credit,,Promotion price discount,,2.96,12.94,,79.88,Completed,740,False,False,0,0.00,False,,
+George Garner,175565,2026-06-22 21:00:41,4436504,0,2,0,0,0, ,,,17.90,0.00,Credit,,,,0.00,2.15,,20.05,Completed,740,False,False,0,0.00,False,,
+George Garner,0,2026-06-22 20:57:58,4436471,0,1,0,0,0, ,,,51.95,0.00,Debit,,,,0.00,6.24,,58.19,Completed,740,False,False,0,0,False,,
+George Garner,232442,2026-06-22 20:56:20,4436451,0,1,0,0,0, ,,,18.95,0.00,Debit,,,,0.00,2.28,,21.23,Completed,740,False,False,0,0.00,False,,
+George Garner,116786,2026-06-22 20:54:25,4436434,0,2,0,0,0, ,,,73.44,0.00,Credit,,,,0.00,8.81,,82.25,Completed,740,False,False,0,0.00,False,,
+George Garner,0,2026-06-22 20:53:23,4436418,0,2,0,0,0, ,,,43.90,0.00,Cash,,,,0.00,5.27,,49.17,Completed,740,False,False,0,0,False,,
+George Garner,0,2026-06-22 20:52:03,4436401,0,1,0,0,0, ,,,12.95,0.00,Credit,,,,0.00,1.56,,14.51,Completed,740,False,False,0,0,False,,
+George Garner,93560,2026-06-22 20:50:52,4436385,0,1,0,0,0,Drew Koch,Product Discount,Manual Discount,34.95,0.00,Cash,,birthday,,5.24,7.72,,37.43,Completed,740,False,False,0,-1.00,False,,
+Drew Koch,258033,2026-06-22 20:49:57,4436380,0,5,0,0,0, ,,,33.75,0.00,Credit,,,,0.00,4.05,,37.80,Completed,740,False,False,0,0.00,False,,
+George Garner,109357,2026-06-22 20:40:41,4436302,0,1,0,0,0, ,,,21.95,0.00,Credit,,,,0.00,2.64,,24.59,Completed,740,False,False,0,0.00,False,,
+George Garner,114959,2026-06-22 20:39:30,4436295,0,1,0,0,0, ,,,35.95,0.00,Cash,,,,0.00,4.32,,40.27,Completed,740,False,False,0,0.00,False,,
+George Garner,117024,2026-06-22 20:37:26,4436277,0,1,0,0,0, ,,,31.95,0.00,Cash,,,,0.00,8.31,,40.26,Completed,740,False,False,0,0.00,False,,
+George Garner,139603,2026-06-22 20:25:46,4436165,0,1,0,0,0, ,,,11.95,0.00,Credit,,,,0.00,1.44,,13.39,Completed,740,False,False,0,0.00,False,,
+Drew Koch,221320,2026-06-22 20:24:20,4436154,0,2,0,0,0, ,,,45.90,0.00,Debit,,,,0.00,9.70,,55.60,Completed,740,False,False,0,0.00,False,,
+Drew Koch,152414,2026-06-22 20:21:42,4436136,0,1,0,0,0, ,,,5.95,0.00,Credit,,,,0.00,0.72,,6.67,Completed,740,False,False,0,0.00,False,,
+George Garner,52827,2026-06-22 20:19:20,4436115,0,3,0,0,0, ,,,128.85,0.00,Credit,,Promotion price discount,,1.96,20.40,,147.29,Completed,740,False,False,0,0.00,False,,
+George Garner,0,2026-06-22 20:12:32,4436055,0,1,0,0,0, ,,,21.95,0.00,Debit,,,,0.00,2.64,,24.59,Completed,740,False,False,0,0,False,,
+George Garner,0,2026-06-22 20:08:15,4436022,0,1,0,0,0, ,,,2.95,0.00,Debit,,,,0.00,0.36,,3.31,Completed,740,False,False,0,0,False,,
+Drew Koch,0,2026-06-22 20:04:02,4435988,0,2,0,0,0, ,,,15.90,0.00,Debit,,,,0.00,1.91,,17.81,Completed,740,False,False,0,0,False,,
+George Garner,199107,2026-06-22 20:03:01,4435973,0,1,0,0,0, ,,,15.95,0.00,Credit,,,,0.00,1.92,,17.87,Completed,740,False,False,0,0.00,False,,
+Drew Koch,202114,2026-06-22 20:02:33,4435965,0,3,0,0,0, ,,,87.93,0.00,Credit,,Promotion price discount,,1.96,10.32,,96.29,Completed,740,False,False,0,0.00,False,,
+George Garner,71666,2026-06-22 20:02:15,4435962,0,1,0,0,0, ,,,29.95,0.00,Credit,,Promotion price discount,,1.96,3.36,,31.35,Completed,740,False,False,0,0.00,False,,
+George Garner,0,2026-06-22 19:58:54,4435926,0,1,0,0,0, ,,,36.95,0.00,Debit,,,,0.00,4.44,,41.39,Completed,740,False,False,0,0,False,,
+George Garner,195365,2026-06-22 19:57:48,4435914,0,1,0,0,0, ,,,38.95,0.00,Debit,,Promotion price discount,,1.96,4.44,,41.43,Completed,740,False,False,0,0.00,False,,
+Drew Koch,195084,2026-06-22 19:57:44,4435912,0,3,0,0,0, ,,,56.85,0.00,Credit,,,,0.00,6.82,,63.67,Completed,740,False,False,12.74,0.00,False,,
+George Garner,176120,2026-06-22 19:55:40,4435896,0,2,0,0,0, ,,,75.90,0.00,Debit,,,,0.00,9.11,,85.01,Completed,740,False,False,1.00,0.00,False,,
+George Garner,93825,2026-06-22 19:54:16,4435883,0,1,0,0,0, ,,,79.95,0.00,Cash,,Promotion price discount,,4.96,9.00,,83.99,Completed,740,False,False,0,0.00,False,,
+George Garner,240137,2026-06-22 19:52:38,4435864,0,1,0,0,0, ,,,24.49,0.00,Debit,,,,0.00,2.93,,27.42,Completed,740,False,False,1.38,0.00,False,,
+Drew Koch,172585,2026-06-22 19:48:36,4435826,0,1,0,0,0, ,,,24.49,0.00,Debit,,,,0.00,2.93,,27.42,Completed,740,False,False,0,0.00,False,,
+Drew Koch,172585,2026-06-22 19:47:32,4435809,0,3,0,0,0, ,,,56.80,0.00,Credit,,,,0.00,6.82,,63.62,Completed,740,False,False,0,0.00,False,,
+George Garner,0,2026-06-22 19:46:07,4435793,0,1,0,0,0, ,,,37.95,0.00,Credit,,Promotion price discount,,2.96,9.10,,44.09,Completed,740,False,False,0,0,False,,
+George Garner,0,2026-06-22 19:44:56,4435781,0,1,0,0,0, ,,,17.95,0.00,Debit,,,,0.00,2.16,,20.11,Completed,740,False,False,0,0,False,,
+George Garner,0,2026-06-22 19:44:05,4435766,0,1,0,0,0, ,,,44.95,0.00,Debit,,,,0.00,5.40,,50.35,Completed,740,False,False,0,0,False,,
+George Garner,0,2026-06-22 19:40:30,4435725,0,1,0,0,0, ,,,10.95,0.00,Cash,,,,0.00,1.32,,12.27,Completed,740,False,False,0,0,False,,
+Drew Koch,203714,2026-06-22 19:39:30,4435708,0,1,0,0,0, ,,,43.95,0.00,Credit,,Promotion price discount,,1.96,10.92,,52.91,Completed,740,False,False,0,0.00,False,,
+George Garner,0,2026-06-22 19:34:36,4435642,0,1,0,0,0, ,,,5.95,0.00,Credit,,,,0.00,0.72,,6.67,Completed,740,False,False,0,0,False,,
+Drew Koch,145006,2026-06-22 19:32:11,4435609,0,1,0,0,0, ,,,27.95,0.00,Credit,,Promotion price discount,,1.96,3.12,,29.11,Completed,740,False,False,0,0.00,False,,
+George Garner,0,2026-06-22 19:32:04,4435608,0,2,0,0,0, ,,,17.90,0.00,Debit,,,,0.00,2.15,,20.05,Completed,740,False,False,0,0,False,,
+George Garner,215044,2026-06-22 19:30:18,4435589,0,1,0,0,0, ,,,23.95,0.00,Debit,,,,0.00,2.88,,26.83,Completed,740,False,False,2.50,0.00,False,,
+Drew Koch,183548,2026-06-22 19:28:58,4435578,0,1,0,0,0, ,,,23.95,0.00,Credit,,,,0.00,2.88,,26.83,Completed,740,False,False,0,0.00,False,,
+Drew Koch,132208,2026-06-22 19:21:04,4435490,0,2,0,0,0,Drew Koch,Order Discount,Customized Discount,47.90,0.00,Debit,,,alpine IQ,4.80,5.18,,48.28,Completed,740,False,False,0,-37.95,False,,
+George Garner,0,2026-06-22 19:19:18,4435471,0,2,0,0,0, ,,,63.44,0.00,Credit,,,,0.00,7.61,,71.05,Completed,740,False,False,0,0,False,,
+George Garner,207573,2026-06-22 19:14:38,4435432,0,1,0,0,0, ,,,25.95,0.00,Credit,,,,0.00,3.12,,29.07,Completed,740,False,False,0,0.00,False,,
+George Garner,147098,2026-06-22 19:11:44,4435405,0,1,0,0,0, ,,,33.95,0.00,Cash,,,,0.00,4.08,,38.03,Completed,740,False,False,0,0.00,False,,
+Drew Koch,116727,2026-06-22 19:02:46,4435312,0,1,0,0,0,Drew Koch,Order Discount,Customized Discount,24.95,0.00,Credit,,,seniors day,2.50,2.69,,25.14,Completed,740,False,False,0,-24.95,False,,
+George Garner,194013,2026-06-22 19:00:52,4435291,0,1,0,0,0, ,,,38.95,0.00,Credit,,Promotion price discount,,1.96,9.62,,46.61,Completed,740,False,False,0,0.00,False,,
+George Garner,0,2026-06-22 18:59:34,4435275,0,2,0,0,0, ,,,11.90,0.00,Debit,,,,0.00,1.43,,13.33,Completed,740,False,False,0,0,False,,
+George Garner,0,2026-06-22 18:58:44,4435264,0,1,0,0,0, ,,,8.95,0.00,Debit,,,,0.00,1.08,,10.03,Completed,740,False,False,0,0,False,,
+Drew Koch,116727,2026-06-22 18:58:31,4435259,0,2,0,0,0,Drew Koch,Order Discount,Customized Discount,73.90,0.00,Credit,,,seniors day,7.40,7.98,,74.48,Completed,740,False,False,5.00,4.00,False,,
+George Garner,99215,2026-06-22 18:55:00,4435208,0,2,0,0,0, ,,,83.90,0.00,Credit,,Promotion price discount,,2.96,21.05,,101.99,Completed,740,False,False,0,0.00,False,,
+Drew Koch,228627,2026-06-22 18:54:43,4435203,0,2,0,0,0, ,,,27.90,0.00,Credit,,,,0.00,3.35,,31.25,Completed,740,False,False,0,0.00,False,,
+George Garner,0,2026-06-22 18:53:50,4435189,0,1,0,0,0, ,,,17.95,0.00,Credit,,Promotion price discount,,1.96,1.92,,17.91,Completed,740,False,False,0,0,False,,
+George Garner,0,2026-06-22 18:52:44,4435183,0,2,0,0,0, ,,,21.90,0.00,Debit,,,,0.00,2.63,,24.53,Completed,740,False,False,0,0,False,,
+George Garner,0,2026-06-22 18:51:08,4435163,0,1,0,0,0, ,,,5.95,0.00,Credit,,,,0.00,0.72,,6.67,Completed,740,False,False,0,0,False,,
+Drew Koch,98010,2026-06-22 18:50:59,4435162,0,1,0,0,0, ,,,44.95,0.00,Cash,,,,0.00,11.69,,56.64,Completed,740,False,False,0,0.00,False,,
+George Garner,0,2026-06-22 18:50:26,4435154,0,2,0,0,0, ,,,14.90,0.00,Credit,,,,0.00,1.78,,16.68,Completed,740,False,False,0,0,False,,
+Drew Koch,106011,2026-06-22 18:46:13,4435109,0,3,0,0,0, ,,,43.85,0.00,Cash,,,,0.00,5.26,,49.11,Completed,740,False,False,0,0.00,False,,
+Drew Koch,0,2026-06-22 18:45:00,4435098,0,1,0,0,0, ,,,8.95,0.00,Cash,,,,0.00,1.08,,10.03,Completed,740,False,False,0,0,False,,
+Drew Koch,0,2026-06-22 18:40:06,4435037,0,1,0,0,0, ,,,13.95,0.00,Credit,,,,0.00,1.68,,15.63,Completed,740,False,False,0,0,False,,
+George Garner,106615,2026-06-22 18:39:30,4435028,0,1,0,0,0, ,,,12.95,0.00,Debit,,,,0.00,1.56,,14.51,Completed,740,False,False,0,0.00,False,,
+George Garner,0,2026-06-22 18:38:04,4435014,0,1,0,0,0, ,,,5.95,0.00,Debit,,,,0.00,0.72,,6.67,Completed,740,False,False,0,0,False,,
+George Garner,0,2026-06-22 18:37:32,4435010,0,1,0,0,0, ,,,9.95,0.00,Debit,,,,0.00,1.20,,11.15,Completed,740,False,False,0,0,False,,
+George Garner,0,2026-06-22 18:36:03,4434989,0,4,0,0,0, ,,,49.70,0.00,Credit,,,,0.00,5.96,,55.66,Completed,740,False,False,0,0,False,,
+George Garner,107619,2026-06-22 18:31:23,4434945,0,2,0,0,0, ,,,58.90,0.00,Debit,,Promotion price discount,,1.96,6.84,,63.78,Completed,740,False,False,0,0.00,False,,
+George Garner,0,2026-06-22 18:28:38,4434904,0,4,0,0,0, ,,,76.80,0.00,Cash/Cash,,Promotion price discount / Promotion price discount,,4.92,13.52,,85.40,Completed,740,False,False,0,0,False,,
+Drew Koch,223843,2026-06-22 18:17:13,4434759,0,1,0,0,0, ,,,24.49,0.00,Debit,,,,0.00,2.93,,27.42,Completed,740,False,False,0,0.00,False,,
+George Garner,0,2026-06-22 18:16:41,4434752,0,1,0,0,0, ,,,12.95,0.00,Debit,,,,0.00,1.56,,14.51,Completed,740,False,False,0,0,False,,
+George Garner,88904,2026-06-22 18:16:11,4434747,0,1,0,0,0, ,,,44.95,0.00,Debit,,,,0.00,5.40,,50.35,Completed,740,False,False,0,0.00,False,,
+George Garner,0,2026-06-22 18:14:52,4434739,0,1,0,0,0, ,,,26.95,0.00,Credit,,,,0.00,3.24,,30.19,Completed,740,False,False,0,0,False,,
+Drew Koch,0,2026-06-22 18:13:46,4434723,0,2,0,0,0, ,,,73.90,0.00,Cash,,,,0.00,19.21,,93.11,Completed,740,False,False,0,0,False,,
+George Garner,173175,2026-06-22 18:04:14,4434611,0,1,0,0,0, ,,,13.95,0.00,Debit,,,,0.00,1.68,,15.63,Completed,740,False,False,0,0.00,False,,
+Drew Koch,76315,2026-06-22 17:55:28,4434519,0,1,0,0,0, ,,,38.95,0.00,Cash,,,,0.00,10.13,,49.08,Completed,740,False,False,0,0.00,False,,
+George Garner,185396,2026-06-22 17:40:18,4434370,0,1,0,0,0, ,,,37.95,0.00,Credit,,Promotion price discount,,2.96,9.10,,44.09,Completed,740,False,False,0,0.00,False,,
+George Garner,0,2026-06-22 17:34:29,4434309,0,1,0,0,0, ,,,39.95,0.00,Credit,,,,0.00,10.39,,50.34,Completed,740,False,False,0,0,False,,
+George Garner,199390,2026-06-22 17:33:04,4434300,0,2,0,0,0, ,,,50.90,0.00,Cash,,,,0.00,11.42,,62.32,Completed,740,False,False,0,0.00,False,,
+Drew Koch,217555,2026-06-22 17:32:25,4434291,0,2,0,0,0, ,,,43.90,0.00,Debit,,,,0.00,5.27,,49.17,Completed,740,False,False,2.00,0.00,False,,
+George Garner,207108,2026-06-22 17:21:54,4434170,0,2,0,0,0, ,,,29.85,0.00,Credit,,Promotion price discount,,1.96,3.34,,31.23,Completed,740,False,False,0,0.00,False,,
+Drew Koch,95923,2026-06-22 17:20:40,4434153,0,2,0,0,0, ,,,27.90,0.00,Cash,,,,0.00,3.35,,31.25,Completed,740,False,False,0,0.00,False,,
+George Garner,228145,2026-06-22 17:19:41,4434142,0,2,0,0,0, ,,,27.90,0.00,Debit,,,,0.00,3.35,,31.25,Completed,740,False,False,0,0.00,False,,
+Drew Koch,93222,2026-06-22 17:18:49,4434135,0,1,0,0,0, ,,,11.95,0.00,Credit,,,,0.00,1.44,,13.39,Completed,740,False,False,0,0.00,False,,
+George Garner,0,2026-06-22 17:18:20,4434129,0,1,0,0,0, ,,,24.95,0.00,Cash,,,,0.00,3.00,,27.95,Completed,740,False,False,0,0,False,,
+Drew Koch,93222,2026-06-22 17:16:01,4434095,0,2,0,0,0, ,,,61.90,0.00,Credit,,,,0.00,7.43,,69.33,Completed,740,False,False,0,0.00,False,,
+George Garner,145167,2026-06-22 17:15:43,4434092,0,1,0,0,0, ,,,38.95,0.00,Credit,,,,0.00,4.68,,43.63,Completed,740,False,False,0,0.00,False,,
+Drew Koch,197422,2026-06-22 17:13:36,4434067,0,2,0,0,0, ,,,52.90,0.00,Debit,,,,0.00,11.52,,64.42,Completed,740,False,False,0,0.00,False,,
+Drew Koch,0,2026-06-22 17:10:36,4434027,0,1,0,0,0, ,,,43.95,0.00,Debit,,Promotion price discount,,1.96,10.92,,52.91,Completed,740,False,False,0,0,False,,
+Drew Koch,145092,2026-06-22 17:09:00,4434010,0,1,0,0,0, ,,,11.95,0.00,Debit,,,,0.00,1.44,,13.39,Completed,740,False,False,0,0.00,False,,
+Drew Koch,145092,2026-06-22 17:07:21,4433987,0,1,0,0,0, ,,,12.95,0.00,Credit,,,,0.00,1.56,,14.51,Completed,740,False,False,0,0.00,False,,
+Drew Koch,196613,2026-06-22 17:00:41,4433914,0,1,0,0,0, ,,,22.95,0.00,Debit,,Promotion price discount,,1.96,2.52,,23.51,Completed,740,False,False,0,0.00,False,,
+Levi Jones,0,2026-06-22 16:59:02,4433898,0,1,0,0,0, ,,,35.95,0.00,Debit,,,,0.00,4.32,,40.27,Completed,740,False,False,0,0,False,,
+George Garner,171409,2026-06-22 16:58:36,4433893,0,1,0,0,0, ,,,55.95,0.00,Debit,,,,0.00,6.72,,62.67,Completed,740,False,False,0,0.00,False,,
+Levi Jones,0,2026-06-22 16:56:26,4433862,0,1,0,0,0, ,,,27.95,0.00,Debit,,,,0.00,3.36,,31.31,Completed,740,False,False,0,0,False,,
+George Garner,0,2026-06-22 16:52:39,4433805,0,1,0,0,0, ,,,43.95,0.00,Debit,,,,0.00,5.28,,49.23,Completed,740,False,False,0,0,False,,
+George Garner,102256,2026-06-22 16:51:07,4433781,0,1,0,0,0, ,,,38.95,0.00,Debit,,Promotion price discount,,1.96,4.44,,41.43,Completed,740,False,False,0,0.00,False,,
+Levi Jones,0,2026-06-22 16:49:48,4433763,0,1,0,0,0, ,,,4.20,0.00,Debit,,,,0.00,0.50,,4.70,Completed,740,False,False,0,0,False,,
+Levi Jones,0,2026-06-22 16:36:09,4433600,0,2,0,0,0,Levi Jones,Product Discount,Manual Discount,54.90,0.00,Debit,,seniors / Promotion price discount,,4.46,6.05,,56.49,Completed,740,False,False,0,0,False,,
+Levi Jones,89321,2026-06-22 16:33:00,4433564,0,1,0,0,0, ,,,29.95,0.00,Debit/Cash,,,,0.00,7.79,,37.74,Completed,740,False,False,0,0.00,False,,
+Levi Jones,0,2026-06-22 16:30:22,4433535,0,1,0,0,0, ,,,38.95,0.00,Credit,,Promotion price discount,,1.96,9.62,,46.61,Completed,740,False,False,0,0,False,,
+Drew Koch,177302,2026-06-22 16:26:19,4433500,0,2,0,0,0, ,,,43.15,0.00,Cash,,,,0.00,5.18,,48.33,Completed,740,False,False,0,0.00,False,,
+Drew Koch,257993,2026-06-22 16:20:31,4433440,0,2,0,0,0, ,,,86.90,0.00,Credit,,,,0.00,10.42,,97.32,Completed,740,False,False,0,0.00,False,,
+George Garner,112005,2026-06-22 16:15:08,4433377,0,1,0,0,0, ,,,37.95,0.00,Debit,,,,0.00,9.87,,47.82,Completed,740,False,False,0,0.00,False,,
+Drew Koch,98689,2026-06-22 16:13:11,4433347,0,2,0,0,0, ,,,13.90,0.00,Credit,,,,0.00,1.67,,15.57,Completed,740,False,False,1.56,0.00,False,,
+Levi Jones,215845,2026-06-22 16:10:30,4433310,0,4,0,0,0, ,,,41.58,0.00,Credit,,,,0.00,8.36,,49.94,Completed,740,False,False,0,17.22,False,,
+George Garner,0,2026-06-22 16:08:42,4433282,0,1,0,0,0, ,,,40.95,0.00,Debit,,,,0.00,10.65,,51.60,Completed,740,False,False,0,0,False,,
+Drew Koch,195256,2026-06-22 16:07:23,4433263,0,2,0,0,0, ,,,73.90,0.00,Credit,,,,0.00,8.87,,82.77,Completed,740,False,False,0,0.00,False,,
+George Garner,209073,2026-06-22 16:04:04,4433223,0,1,0,0,0, ,,,38.95,0.00,Debit,,,,0.00,4.68,,43.63,Completed,740,False,False,0,0.00,False,,
+Drew Koch,104664,2026-06-22 16:00:32,4433174,0,1,0,0,0, ,,,29.95,0.00,Cash,,Promotion price discount,,1.96,3.36,,31.35,Completed,740,False,False,0,0.00,False,,
+Levi Jones,0,2026-06-22 15:53:00,4433085,0,1,0,0,0, ,,,8.95,0.00,Debit,,,,0.00,1.08,,10.03,Completed,740,False,False,0,0,False,,
+Drew Koch,116112,2026-06-22 15:52:59,4433083,0,1,0,0,0, ,,,21.95,0.00,Debit,,,,0.00,2.64,,24.59,Completed,740,False,False,0,0.00,False,,
+Levi Jones,0,2026-06-22 15:52:02,4433073,0,1,0,0,0, ,,,63.95,0.00,Credit,,,,0.00,7.68,,71.63,Completed,740,False,False,0,0,False,,
+Kirtigan Sivalingam,109859,2026-06-22 15:50:50,4433056,0,2,0,0,0,Kirtigan Sivalingam,Order Discount,Customized Discount,11.90,0.00,Credit,,,,1.20,1.29,,11.99,Completed,740,False,False,0,-11.90,False,,
+Levi Jones,187901,2026-06-22 15:47:05,4433007,0,1,1,0,0, ,,,24.49,0.00,Debit/Cash,,,,0.00,2.93,,27.42,Completed,740,False,False,0,0.00,False,,
+Levi Jones,88586,2026-06-22 15:44:07,4432967,0,1,0,0,0, ,,,39.95,0.00,Cash,,,,0.00,4.80,,44.75,Completed,740,False,False,0,0.00,False,,
+Drew Koch,225798,2026-06-22 15:41:51,4432931,0,1,0,0,0, ,,,27.95,0.00,Debit,,,,0.00,3.36,,31.31,Completed,740,False,False,2.00,0.00,False,,
+Kirtigan Sivalingam,257521,2026-06-22 15:40:49,4432921,0,2,0,0,0,Kirtigan Sivalingam,Order Discount,,56.90,0.00,Debit,,,25% OFF - Accessories Alpine Q,14.23,5.12,,47.79,Completed,740,False,False,0,-18.95,False,,
+Cian Morris-Gracey,0,2026-06-22 15:40:42,4432919,0,1,0,0,0,Cian Morris-Gracey,Order Discount,Customized Discount,24.95,0.00,Credit,,,senior day,2.50,2.69,,25.14,Completed,740,False,False,0,0,False,,
+Drew Koch,0,2026-06-22 15:40:13,4432910,0,1,0,0,0, ,,,26.95,0.00,Credit,,,,0.00,3.24,,30.19,Completed,740,False,False,0,0,False,,
+Levi Jones,0,2026-06-22 15:38:53,4432888,0,1,0,0,0,Levi Jones,Order Discount,Customized Discount,33.95,0.00,Debit,,,,3.40,3.67,,34.22,Completed,740,False,False,0,0,False,,
+Cian Morris-Gracey,174842,2026-06-22 15:35:30,4432837,0,1,0,0,0,Cian Morris-Gracey,Order Discount,Customized Discount,105.95,0.00,Debit,,,seniors day,10.60,11.44,,106.79,Completed,740,False,False,3.00,-105.95,False,,
+Levi Jones,0,2026-06-22 15:33:41,4432818,0,4,0,0,0, ,,,23.80,0.00,Credit,,,,0.00,2.86,,26.66,Completed,740,False,False,0,0,False,,
+Levi Jones,0,2026-06-22 15:32:27,4432803,0,1,0,0,0, ,,,10.95,0.00,Credit,,,,0.00,1.32,,12.27,Completed,740,False,False,0,0,False,,
+Levi Jones,173335,2026-06-22 15:29:32,4432771,0,1,0,0,0, ,,,38.95,0.00,Debit,,Promotion price discount,,1.96,9.62,,46.61,Completed,740,False,False,0,0.00,False,,
+Kirtigan Sivalingam,0,2026-06-22 15:26:55,4432737,0,1,0,0,0, ,,,38.95,0.00,Debit,,Promotion price discount,,1.96,9.62,,46.61,Completed,740,False,False,0,0,False,,
+Cian Morris-Gracey,0,2026-06-22 15:26:38,4432729,0,1,0,0,0, ,,,8.95,0.00,Debit,,,,0.00,1.08,,10.03,Completed,740,False,False,0,0,False,,
+Levi Jones,0,2026-06-22 15:24:09,4432704,0,2,0,0,0, ,,,29.90,0.00,Cash,,,,0.00,3.59,,33.49,Completed,740,False,False,0,0,False,,
+Cian Morris-Gracey,0,2026-06-22 15:23:58,4432702,0,1,0,0,0,Cian Morris-Gracey,Order Discount,Customized Discount,18.95,0.00,Debit,,,seniors day,1.90,2.04,,19.09,Completed,740,False,False,2.00,0,False,,
+Cian Morris-Gracey,0,2026-06-22 15:20:59,4432668,0,7,0,0,0,Cian Morris-Gracey,Order Discount,Customized Discount,114.55,0.00,Debit,,,seniors day,11.48,12.36,,115.43,Completed,740,False,False,17.32,0,False,,
+Levi Jones,214407,2026-06-22 15:18:58,4432655,0,2,0,0,0, ,,,39.90,0.00,Debit,,,,0.00,4.79,,44.69,Completed,740,False,False,0,0.00,False,,
+Kirtigan Sivalingam,177309,2026-06-22 15:18:16,4432651,0,2,0,0,0,Kirtigan Sivalingam,Order Discount,,75.90,0.00,Credit,,,BIrthday Discount apline Q,15.18,15.78,,76.50,Completed,740,False,False,0,4.10,False,,
+Levi Jones,0,2026-06-22 15:13:42,4432608,0,2,0,0,0,Levi Jones,Order Discount,Customized Discount,91.90,0.00,Cash,,,,9.20,9.93,,92.63,Completed,740,False,False,0,0,False,,
+Levi Jones,145596,2026-06-22 15:08:39,4432545,0,1,1,0,0, ,,,43.95,0.00,StoreCredit,,,,0.00,11.43,,55.38,Completed,740,False,False,0,0.00,False,,
+Cian Morris-Gracey,91348,2026-06-22 15:02:52,4432489,0,2,0,0,0,Cian Morris-Gracey,Order Discount,Customized Discount,52.90,0.00,Credit,,,seniors day,5.30,5.71,,53.31,Completed,740,False,False,3.00,-1.00,False,,
+Levi Jones,177110,2026-06-22 15:01:15,4432467,0,1,0,0,0,Levi Jones,Order Discount,Customized Discount,24.95,0.00,Cash,,,,2.50,2.69,,25.14,Completed,740,False,False,0,-24.95,False,,
+Cian Morris-Gracey,0,2026-06-22 15:01:15,4432466,0,1,0,0,0, ,,,37.95,0.00,Debit,,,,0.00,9.87,,47.82,Completed,740,False,False,0,0,False,,
+Levi Jones,59785,2026-06-22 14:56:33,4432426,0,3,0,0,0, ,,,50.85,0.00,Debit,,,,0.00,11.69,,62.54,Completed,740,False,False,0,0.00,False,,
+Cian Morris-Gracey,115443,2026-06-22 14:54:02,4432399,0,2,1,0,0,Cian Morris-Gracey,Order Discount,,42.90,0.00,Cash,,,seniors day,4.30,4.63,,43.23,Completed,740,False,False,0,0.00,False,,
+Cian Morris-Gracey,250327,2026-06-22 14:49:46,4432365,0,2,0,0,0, ,,,37.90,0.00,Credit,,,,0.00,4.55,,42.45,Completed,740,False,False,0,0.00,False,,
+Levi Jones,150691,2026-06-22 14:47:06,4432331,0,3,0,0,0, ,,,52.85,0.00,Credit,,,,0.00,6.34,,59.19,Completed,740,False,False,0,0.00,False,,
+Kirtigan Sivalingam,90100,2026-06-22 14:44:48,4432311,0,1,0,0,0, ,,,38.95,0.00,Cash,,,,0.00,4.68,,43.63,Completed,740,False,False,0,0.00,False,,
+Kirtigan Sivalingam,183771,2026-06-22 14:39:58,4432251,0,1,0,0,0, ,,,43.95,0.00,Cash,,,,0.00,5.28,,49.23,Completed,740,False,False,0,0.00,False,,
+Levi Jones,117179,2026-06-22 14:27:20,4432132,0,1,4,0,0,Levi Jones,Order Discount,,55.95,0.00,Cash,,,,5.60,6.04,,56.39,Completed,740,False,False,0,0.00,False,,
+Cian Morris-Gracey,0,2026-06-22 14:22:31,4432094,0,1,0,0,0, ,,,9.95,0.00,Debit,,,,0.00,1.20,,11.15,Completed,740,False,False,0,0,False,,
+Levi Jones,251279,2026-06-22 14:21:58,4432085,0,3,0,0,0, ,,,30.85,0.00,Credit,,,,0.00,3.70,,34.55,Completed,740,False,False,0,0.00,False,,
+Kirtigan Sivalingam,141909,2026-06-22 14:15:47,4432031,0,2,0,0,0, ,,,17.90,0.00,Credit,,,,0.00,2.15,,20.05,Completed,740,False,False,0,0.00,False,,
+Levi Jones,0,2026-06-22 14:13:43,4432011,0,1,0,0,0, ,,,22.95,0.00,Debit,,,,0.00,2.76,,25.71,Completed,740,False,False,0,0,False,,
+Cian Morris-Gracey,0,2026-06-22 14:13:36,4432009,0,1,0,0,0, ,,,13.95,0.00,Debit,,,,0.00,1.68,,15.63,Completed,740,False,False,0,0,False,,
+Kirtigan Sivalingam,116921,2026-06-22 14:12:45,4432000,0,1,0,0,0, ,,,86.95,0.00,Cash,,,,0.00,10.44,,97.39,Completed,740,False,False,0,0.00,False,,
+Levi Jones,0,2026-06-22 14:05:34,4431936,0,1,0,0,0,Levi Jones,Order Discount,Customized Discount,17.95,0.00,Cash,,,,1.80,1.94,,18.09,Completed,740,False,False,0,0,False,,
+Cian Morris-Gracey,195197,2026-06-22 14:00:47,4431881,0,4,0,0,0,Cian Morris-Gracey,Order Discount,Customized Discount,55.80,0.00,Debit,,,seniors day,5.60,6.02,,56.22,Completed,740,False,False,0,-12.00,False,,
+Cian Morris-Gracey,104409,2026-06-22 13:56:58,4431846,0,1,0,0,0, ,,,37.95,0.00,Credit,,Promotion price discount,,2.96,9.10,,44.09,Completed,740,False,False,0,0.00,False,,
+Cian Morris-Gracey,0,2026-06-22 13:45:52,4431737,0,2,0,0,0, ,,,17.90,0.00,Cash,,,,0.00,2.15,,20.05,Completed,740,False,False,0,0,False,,
+Cian Morris-Gracey,0,2026-06-22 13:41:27,4431692,0,2,0,0,0, ,,,27.90,0.00,Debit,,,,0.00,3.35,,31.25,Completed,740,False,False,0,0,False,,
+Cian Morris-Gracey,87815,2026-06-22 13:37:02,4431646,0,1,0,0,0,Cian Morris-Gracey,Order Discount,Customized Discount,12.95,0.00,Cash,,,seniors day,1.30,1.40,,13.05,Completed,740,False,False,0,2.00,False,,
+Cian Morris-Gracey,0,2026-06-22 13:23:06,4431526,0,1,0,0,0, ,,,13.95,0.00,Debit,,,,0.00,1.68,,15.63,Completed,740,False,False,1.00,0,False,,
+Cian Morris-Gracey,233569,2026-06-22 13:22:24,4431518,0,1,0,0,0, ,,,37.95,0.00,Credit,,Promotion price discount,,1.96,9.36,,45.35,Completed,740,False,False,0,0.00,False,,
+Cian Morris-Gracey,0,2026-06-22 13:18:13,4431475,0,1,0,0,0, ,,,13.95,0.00,Debit,,,,0.00,1.68,,15.63,Completed,740,False,False,0,0,False,,
+Cian Morris-Gracey,245534,2026-06-22 13:16:36,4431464,0,1,0,0,0, ,,,27.95,0.00,Debit,,,,0.00,3.36,,31.31,Completed,740,False,False,0,0.00,False,,
+Cian Morris-Gracey,143769,2026-06-22 13:09:48,4431410,0,2,0,0,0,Cian Morris-Gracey,Order Discount,Customized Discount,27.90,0.00,Debit,,,seniors day,2.80,3.02,,28.12,Completed,740,False,False,0,-3.00,False,,
+Cian Morris-Gracey,203453,2026-06-22 12:53:15,4431257,0,1,0,0,0, ,,,46.95,0.00,Debit,,,,0.00,12.21,,59.16,Completed,740,False,False,0,0.00,False,,
+Cian Morris-Gracey,253976,2026-06-22 12:50:43,4431235,0,2,0,0,0, ,,,25.90,0.00,Cash,,,,0.00,3.11,,29.01,Completed,740,False,False,0,0.00,False,,
+Cian Morris-Gracey,255585,2026-06-22 12:49:43,4431219,0,1,0,0,0, ,,,47.95,0.00,Credit,,Promotion price discount,,3.96,11.44,,55.43,Completed,740,False,False,0,0.00,False,,
+Cian Morris-Gracey,116430,2026-06-22 12:46:33,4431188,0,1,0,0,0, ,,,18.95,0.00,Debit,,,,0.00,2.28,,21.23,Completed,740,False,False,0,0.00,False,,
+Cian Morris-Gracey,0,2026-06-22 12:43:11,4431156,0,2,0,0,0, ,,,11.90,0.00,Cash,,,,0.00,1.43,,13.33,Completed,740,False,False,0,0,False,,
+Cian Morris-Gracey,0,2026-06-22 12:42:12,4431144,0,1,0,0,0, ,,,39.95,0.00,Credit,,,,0.00,10.39,,50.34,Completed,740,False,False,0,0,False,,
+Cian Morris-Gracey,45867,2026-06-22 12:33:17,4431067,0,1,0,0,0, ,,,28.95,0.00,Cash,,,,0.00,7.53,,36.48,Completed,740,False,False,0,0,False,,
+Cian Morris-Gracey,108002,2026-06-22 12:28:30,4431034,0,1,0,0,0, ,,,38.95,0.00,Cash,,Promotion price discount,,1.96,4.44,,41.43,Completed,740,False,False,0,0.00,False,,
+Kirtigan Sivalingam,257936,2026-06-22 12:25:23,4431012,0,3,0,0,0, ,,,82.55,0.00,Credit,,,,0.00,9.91,,92.46,Completed,740,False,False,0,0.00,False,,
+Kirtigan Sivalingam,111738,2026-06-22 12:18:13,4430956,0,3,0,0,0, ,,,32.85,0.00,Debit,,,,0.00,3.94,,36.79,Completed,740,False,False,0,0.00,False,,
+Kirtigan Sivalingam,0,2026-06-22 11:59:53,4430793,0,2,0,0,0, ,,,89.90,0.00,Cash,,,,0.00,10.79,,100.69,Completed,740,False,False,0,0,False,,
+Cian Morris-Gracey,139304,2026-06-22 11:42:03,4430679,0,1,0,0,0, ,,,28.95,0.00,Debit,,,,0.00,7.53,,36.48,Completed,740,False,False,3.00,0.00,False,,
+Kirtigan Sivalingam,188230,2026-06-22 11:31:09,4430608,0,1,0,0,0, ,,,13.95,0.00,Debit,,,,0.00,1.68,,15.63,Completed,740,False,False,0,0.00,False,,
+Kirtigan Sivalingam,257920,2026-06-22 11:27:42,4430578,0,1,0,0,0, ,,,36.95,0.00,Credit,,,,0.00,9.61,,46.56,Completed,740,False,False,0,0.00,False,,
+Cian Morris-Gracey,51226,2026-06-22 11:20:21,4430533,0,2,0,0,0, ,,,35.90,0.00,Debit,,,,0.00,4.31,,40.21,Completed,740,False,False,0,0.00,False,,
+Kirtigan Sivalingam,0,2026-06-22 11:18:30,4430522,0,1,0,0,0, ,,,10.95,0.00,Credit,,,,0.00,1.32,,12.27,Completed,740,False,False,2.50,0,False,,
+Cian Morris-Gracey,224526,2026-06-22 11:17:25,4430516,0,1,0,0,0, ,,,38.95,0.00,Debit,,,,0.00,10.13,,49.08,Completed,740,False,False,0,0.00,False,,
+Cian Morris-Gracey,0,2026-06-22 11:03:20,4430420,0,1,0,0,0, ,,,77.95,0.00,Cash,,,,0.00,9.36,,87.31,Completed,740,False,False,0,0,False,,
+Cian Morris-Gracey,87668,2026-06-22 11:01:12,4430411,0,2,0,0,0, ,,,38.44,0.00,Debit,,,,0.00,4.61,,43.05,Completed,740,False,False,0,0.00,False,,
+Cian Morris-Gracey,0,2026-06-22 10:59:22,4430396,0,2,0,0,0, ,,,7.90,0.00,Credit,,,,0.00,0.95,,8.85,Completed,740,False,False,0,0,False,,
+Kirtigan Sivalingam,0,2026-06-22 10:53:04,4430345,0,1,0,0,0, ,,,24.95,0.00,Cash,,,,0.00,3.00,,27.95,Completed,740,False,False,0,0,False,,
+Cian Morris-Gracey,115839,2026-06-22 10:52:02,4430339,0,2,0,0,0, ,,,70.90,0.00,Debit,,,,0.00,8.50,,79.40,Completed,740,False,False,0,0.00,False,,
+Cian Morris-Gracey,201851,2026-06-22 10:43:59,4430297,0,1,0,0,0, ,,,26.95,0.00,Debit,,,,0.00,3.24,,30.19,Completed,740,False,False,0.31,0.00,False,,
+Kirtigan Sivalingam,0,2026-06-22 10:31:17,4430210,0,1,0,0,0,Kirtigan Sivalingam,Order Discount,Customized Discount,43.90,0.00,Debit,,,,4.39,4.75,,44.26,Completed,740,False,False,0,0,False,,
+Kirtigan Sivalingam,99745,2026-06-22 10:27:00,4430176,0,2,0,0,0, ,,,11.90,0.00,Debit,,,,0.00,1.43,,13.33,Completed,740,False,False,0,0.00,False,,
+Cian Morris-Gracey,90993,2026-06-22 10:26:11,4430171,0,2,0,0,0, ,,,34.44,0.00,Debit,,,,0.00,4.13,,38.57,Completed,740,False,False,0,0.00,False,,
+Kirtigan Sivalingam,0,2026-06-22 10:23:37,4430156,0,1,0,0,0,Kirtigan Sivalingam,Order Discount,Customized Discount,5.95,0.00,Cash,,,,0.60,0.64,,5.99,Completed,740,False,False,0,0,False,,
+Kirtigan Sivalingam,0,2026-06-22 10:20:59,4430146,0,2,0,0,0, ,,,50.90,0.00,Debit,,,,0.00,11.00,,61.90,Completed,740,False,False,0,0,False,,
+Kirtigan Sivalingam,84241,2026-06-22 10:16:02,4430111,0,1,0,0,0, ,,,22.95,0.00,Debit,,,,0.00,2.76,,25.71,Completed,740,False,False,0,0.00,False,,
+Cian Morris-Gracey,95551,2026-06-22 10:15:17,4430104,0,4,0,0,0, ,,,131.80,0.00,Debit,,,,0.00,20.29,,152.09,Completed,740,False,False,2.00,0.00,False,,
+Cian Morris-Gracey,0,2026-06-22 10:11:46,4430084,0,1,0,0,0, ,,,23.95,0.00,Debit,,,,0.00,2.88,,26.83,Completed,740,False,False,2.69,0,False,,
+Kirtigan Sivalingam,128361,2026-06-22 10:02:47,4430020,0,1,0,0,0, ,,,6.49,0.00,Credit,,,,0.00,0.77,,7.26,Completed,740,False,False,0,0.00,False,,
+Kirtigan Sivalingam,90901,2026-06-22 09:56:00,4429971,0,1,0,0,0, ,,,38.95,0.00,Cash,,,,0.00,10.13,,49.08,Completed,740,False,False,0,0.00,False,,
+Kirtigan Sivalingam,0,2026-06-22 09:54:19,4429958,0,1,0,0,0, ,,,12.95,0.00,Credit,,,,0.00,1.56,,14.51,Completed,740,False,False,0,0,False,,
+Cian Morris-Gracey,0,2026-06-22 09:36:01,4429872,0,1,0,0,0, ,,,18.95,0.00,Credit,,,,0.00,4.93,,23.88,Completed,740,False,False,0,0,False,,
+Kirtigan Sivalingam,89266,2026-06-22 09:35:45,4429868,0,3,0,0,0, ,,,84.85,0.00,Debit,,,,0.00,10.18,,95.03,Completed,740,False,False,5.00,0.00,False,,
+Cian Morris-Gracey,0,2026-06-22 09:34:01,4429857,0,6,0,0,0, ,,,58.95,0.00,Cash,,Promotion price discount,,2.96,11.62,,67.61,Completed,740,False,False,0,0,False,,
+Kirtigan Sivalingam,109099,2026-06-22 09:24:04,4429817,0,1,0,0,0, ,,,39.95,0.00,Credit,,,,0.00,10.39,,50.34,Completed,740,False,False,0,0.00,False,,
+Kirtigan Sivalingam,0,2026-06-22 09:22:09,4429807,0,2,0,0,0, ,,,10.90,0.00,Debit,,,,0.00,1.30,,12.20,Completed,740,False,False,0,0,False,,
+Kirtigan Sivalingam,0,2026-06-22 09:15:31,4429759,0,5,0,0,0,Kirtigan Sivalingam,Product Discount,Manual Discount,126.75,0.00,Debit,,Promotion price discount / Asked,,3.06,24.63,,148.32,Completed,740,False,False,0,0,False,,
+Cian Morris-Gracey,94382,2026-06-22 09:11:04,4429727,0,4,0,0,0, ,,,119.80,0.00,Debit,,,,0.00,19.83,,139.63,Completed,740,False,False,4.00,0.00,False,,
+Cian Morris-Gracey,0,2026-06-22 09:05:48,4429699,0,1,0,0,0, ,,,13.95,0.00,Debit,,,,0.00,1.68,,15.63,Completed,740,False,False,0,0,False,,
+Cian Morris-Gracey,90155,2026-06-22 09:02:05,4429672,0,1,0,0,0, ,,,18.95,0.00,Debit,,,,0.00,2.28,,21.23,Completed,740,False,False,0,0.00,False,,
+Gavin Warburton,229813,2026-06-21 22:57:58,4429489,0,2,0,0,0, ,,,43.90,0.00,Cash,,Promotion price discount,,2.96,9.96,,50.90,Completed,740,False,False,0,0.00,False,,
+George Garner,0,2026-06-21 22:57:51,4429485,0,2,0,0,0, ,,,8.44,0.00,Credit,,,,0.00,1.01,,9.45,Completed,740,False,False,0,0,False,,
+Gavin Warburton,100654,2026-06-21 22:55:30,4429454,0,1,0,0,0, ,,,24.49,0.00,Debit,,,,0.00,2.93,,27.42,Completed,740,False,False,2.50,0.00,False,,
+George Garner,198724,2026-06-21 22:52:48,4429431,0,1,0,0,0, ,,,10.95,0.00,Debit,,,,0.00,1.32,,12.27,Completed,740,False,False,0,0.00,False,,
+Gavin Warburton,228632,2026-06-21 22:49:17,4429392,0,2,0,0,0, ,,,13.90,0.00,Debit,,,,0.00,1.67,,15.57,Completed,740,False,False,1.56,0.00,False,,
+George Garner,0,2026-06-21 22:48:11,4429375,0,1,0,0,0, ,,,13.95,0.00,Credit,,,,0.00,1.68,,15.63,Completed,740,False,False,0,0,False,,
+George Garner,0,2026-06-21 22:46:30,4429357,0,2,1,0,0, ,,,24.90,0.00,Debit,,,,0.00,2.98,,27.88,Completed,740,False,False,0,0,False,,
+George Garner,185616,2026-06-21 22:41:08,4429297,0,1,0,0,0, ,,,12.95,0.00,Credit,,,,0.00,1.56,,14.51,Completed,740,False,False,1.00,0.00,False,,
+Gavin Warburton,101520,2026-06-21 22:38:01,4429266,0,1,0,0,0, ,,,15.95,0.00,Debit,,,,0.00,1.92,,17.87,Completed,740,False,False,1.79,0.00,False,,
+George Garner,88214,2026-06-21 22:37:46,4429264,0,2,0,0,0, ,,,44.90,0.00,Debit,,,,0.00,9.86,,54.76,Completed,740,False,False,0,0.00,False,,
+George Garner,86811,2026-06-21 22:34:39,4429243,0,1,0,0,0, ,,,2.90,0.00,Debit,,,,0.00,0.34,,3.24,Completed,740,False,False,0,2.05,False,,
+Gavin Warburton,172513,2026-06-21 22:33:30,4429230,0,1,0,0,0, ,,,38.95,0.00,Debit,,,,0.00,10.13,,49.08,Completed,740,False,False,0,0.00,False,,
+George Garner,250946,2026-06-21 22:32:58,4429226,0,1,0,0,0, ,,,24.95,0.00,Debit,,,,0.00,3.00,,27.95,Completed,740,False,False,1.00,0.00,False,,
+George Garner,0,2026-06-21 22:32:01,4429216,0,1,0,0,0, ,,,24.95,0.00,Cash,,,,0.00,3.00,,27.95,Completed,740,False,False,0,0,False,,
+George Garner,151786,2026-06-21 22:27:26,4429168,0,1,0,0,0, ,,,8.95,0.00,Cash,,,,0.00,1.08,,10.03,Completed,740,False,False,0,0.00,False,,
+George Garner,202267,2026-06-21 22:25:01,4429136,0,1,0,0,0, ,,,29.95,0.00,Debit,,,,0.00,7.79,,37.74,Completed,740,False,False,0,0.00,False,,
+George Garner,0,2026-06-21 22:20:21,4429090,0,4,0,0,0, ,,,27.80,0.00,Debit,,,,0.00,3.34,,31.14,Completed,740,False,False,0.94,0.00,False,,
+Gavin Warburton,202887,2026-06-21 22:15:59,4429045,0,1,0,0,0, ,,,37.95,0.00,Debit,,,,0.00,9.87,,47.82,Completed,740,False,False,0,0.00,False,,
+George Garner,183229,2026-06-21 22:15:48,4429040,0,1,0,0,0, ,,,16.95,0.00,Credit,,,,0.00,2.04,,18.99,Completed,740,False,False,0,0.00,False,,
+Gavin Warburton,145522,2026-06-21 22:13:48,4429019,0,5,0,0,0, ,,,179.60,0.00,Credit,,,,0.00,32.18,,211.78,Completed,740,False,False,0,0.00,False,,
+Gavin Warburton,0,2026-06-21 22:11:44,4428996,0,2,0,0,0, ,,,15.90,0.00,Credit,,,,0.00,1.91,,17.81,Completed,740,False,False,0,0,False,,
+George Garner,243676,2026-06-21 22:10:55,4428985,0,2,0,0,0, ,,,15.90,0.00,Cash,,,,0.00,1.91,,17.81,Completed,740,False,False,0,0.00,False,,
+Gavin Warburton,0,2026-06-21 22:10:06,4428979,0,1,0,0,0, ,,,6.95,0.00,Credit,,,,0.00,0.84,,7.79,Completed,740,False,False,0,0,False,,
+George Garner,234085,2026-06-21 22:09:53,4428977,0,1,0,0,0, ,,,47.95,0.00,Credit,,,,0.00,5.76,,53.71,Completed,740,False,False,0,0.00,False,,
+George Garner,85031,2026-06-21 22:08:49,4428967,0,1,0,0,0, ,,,12.95,0.00,Debit,,,,0.00,1.56,,14.51,Completed,740,False,False,0,0.00,False,,
+Gavin Warburton,0,2026-06-21 22:06:24,4428945,0,6,0,0,0, ,,,185.70,0.00,Credit,,Promotion price discount / Promotion price discount,,8.92,27.51,,204.29,Completed,740,False,False,20.43,0,False,,
+George Garner,0,2026-06-21 22:01:32,4428902,0,1,0,0,0, ,,,24.49,0.00,Debit,,,,0.00,2.93,,27.42,Completed,740,False,False,0,0,False,,
+George Garner,186036,2026-06-21 21:59:54,4428892,0,1,0,0,0, ,,,6.49,0.00,Debit,,,,0.00,0.77,,7.26,Completed,740,False,False,0,0.00,False,,
+Gavin Warburton,216594,2026-06-21 21:58:57,4428886,0,2,0,0,0, ,,,11.90,0.00,Debit,,,,0.00,1.43,,13.33,Completed,740,False,False,0,0.00,False,,
+George Garner,0,2026-06-21 21:58:07,4428877,0,1,0,0,0, ,,,21.95,0.00,Cash,,,,0.00,2.64,,24.59,Completed,740,False,False,0,0,False,,
+Gavin Warburton,229853,2026-06-21 21:57:09,4428870,0,2,0,0,0, ,,,19.90,0.00,Debit,,,,0.00,2.39,,22.29,Completed,740,False,False,0,0.00,False,,
+George Garner,0,2026-06-21 21:56:49,4428865,0,5,0,0,0, ,,,74.75,0.00,Credit,,,,0.00,8.97,,83.72,Completed,740,False,False,1.00,0,False,,
+Gavin Warburton,0,2026-06-21 21:54:16,4428839,0,1,1,0,0, ,,,11.95,0.00,Debit,,,,0.00,1.44,,13.39,Completed,740,False,False,0,0,False,,
+George Garner,0,2026-06-21 21:52:59,4428816,0,1,0,0,0, ,,,17.95,0.00,Debit,,,,0.00,2.16,,20.11,Completed,740,False,False,0,0,False,,
+Gavin Warburton,108948,2026-06-21 21:52:38,4428814,0,1,0,0,0, ,,,5.95,0.00,Cash,,,,0.00,0.72,,6.67,Completed,740,False,False,0,0.00,False,,
+George Garner,0,2026-06-21 21:49:44,4428780,0,1,0,0,0, ,,,19.90,0.00,Debit,,,,0.00,2.39,,22.29,Completed,740,False,False,0,0,False,,
+George Garner,94220,2026-06-21 21:41:13,4428692,0,1,0,0,0, ,,,54.95,0.00,Debit,,Promotion price discount,,18.96,4.32,,40.31,Completed,740,False,False,0,0.00,False,,
+George Garner,0,2026-06-21 21:39:31,4428674,0,1,0,0,0, ,,,13.95,0.00,Credit,,,,0.00,1.68,,15.63,Completed,740,False,False,2.35,0,False,,
+George Garner,0,2026-06-21 21:26:56,4428534,0,2,0,0,0, ,,,9.90,0.00,Cash,,,,0.00,1.19,,11.09,Completed,740,False,False,0,0,False,,
+George Garner,197434,2026-06-21 21:22:05,4428491,0,1,0,0,0, ,,,24.49,0.00,Cash,,,,0.00,2.93,,27.42,Completed,740,False,False,0,0.00,False,,
+Gavin Warburton,146251,2026-06-21 21:13:45,4428395,0,1,0,0,0, ,,,38.95,0.00,Debit,,,,0.00,4.68,,43.63,Completed,740,False,False,0,0.00,False,,
+Gavin Warburton,105655,2026-06-21 21:13:01,4428391,0,1,0,0,0, ,,,11.95,0.00,Debit,,,,0.00,1.44,,13.39,Completed,740,False,False,0,0.00,False,,
+Gavin Warburton,0,2026-06-21 21:11:14,4428375,0,1,0,0,0, ,,,29.95,0.00,Cash,,Promotion price discount,,1.96,3.36,,31.35,Completed,740,False,False,0,0,False,,
+Gavin Warburton,0,2026-06-21 21:09:51,4428358,0,1,0,0,0, ,,,18.95,0.00,Debit,,,,0.00,4.93,,23.88,Completed,740,False,False,0,0,False,,
+Gavin Warburton,98058,2026-06-21 21:08:57,4428347,0,1,0,0,0, ,,,38.95,0.00,Debit,,,,0.00,4.68,,43.63,Completed,740,False,False,0,0.00,False,,
+Gavin Warburton,55940,2026-06-21 21:06:57,4428329,0,2,0,0,0, ,,,11.90,0.00,Debit,,,,0.00,1.43,,13.33,Completed,740,False,False,1.34,0.00,False,,
+Gavin Warburton,0,2026-06-21 20:52:56,4428187,0,2,0,0,0, ,,,15.90,0.00,Debit,,,,0.00,1.91,,17.81,Completed,740,False,False,0,0,False,,
+Gavin Warburton,171806,2026-06-21 20:50:15,4428159,0,1,0,0,0, ,,,47.95,0.00,Credit,,Promotion price discount,,3.96,11.44,,55.43,Completed,740,False,False,0,0.00,False,,
+George Garner,212615,2026-06-21 20:43:58,4428094,0,3,0,0,0, ,,,23.85,0.00,Credit,,,,0.00,2.86,,26.71,Completed,740,False,False,0,0.00,False,,
+Gavin Warburton,97587,2026-06-21 20:40:25,4428055,0,1,0,0,0, ,,,27.95,0.00,Debit,,Promotion price discount,,1.96,3.12,,29.11,Completed,740,False,False,1.00,0.00,False,,
+George Garner,0,2026-06-21 20:37:19,4428022,0,2,0,0,0, ,,,43.90,0.00,Cash,,,,0.00,5.27,,49.17,Completed,740,False,False,0,0,False,,
+George Garner,140041,2026-06-21 20:35:12,4428005,0,1,0,0,0, ,,,14.95,0.00,Cash,,,,0.00,1.80,,16.75,Completed,740,False,False,0,0.00,False,,
+Gavin Warburton,0,2026-06-21 20:34:38,4427997,0,2,0,0,0, ,,,77.90,0.00,Debit,,,,0.00,9.35,,87.25,Completed,740,False,False,0,0,False,,
+George Garner,0,2026-06-21 20:34:34,4427996,0,1,0,0,0, ,,,21.95,0.00,Credit,,,,0.00,2.64,,24.59,Completed,740,False,False,0,0,False,,
+George Garner,0,2026-06-21 20:32:41,4427974,0,1,0,0,0, ,,,9.95,0.00,Cash,,,,0.00,1.20,,11.15,Completed,740,False,False,0,0,False,,
+George Garner,0,2026-06-21 20:23:09,4427877,0,2,0,0,0, ,,,51.90,0.00,Debit,,,,0.00,11.54,,63.44,Completed,740,False,False,0,0,False,,
+George Garner,222014,2026-06-21 20:15:29,4427801,0,1,0,0,0, ,,,24.95,0.00,Credit,,,,0.00,3.00,,27.95,Completed,740,False,False,1.40,0.00,False,,
+George Garner,0,2026-06-21 20:11:46,4427772,0,1,0,0,0, ,,,39.95,0.00,Debit,,,,0.00,10.39,,50.34,Completed,740,False,False,0,0,False,,
+George Garner,87000,2026-06-21 20:09:31,4427748,0,2,0,0,0, ,,,129.90,0.00,Debit,,,,0.00,15.59,,145.49,Completed,740,False,False,0,0.00,False,,
+Gavin Warburton,0,2026-06-21 20:02:36,4427695,0,1,0,0,0, ,,,12.95,0.00,Credit,,,,0.00,1.56,,14.51,Completed,740,False,False,0,0,False,,
+George Garner,195667,2026-06-21 20:01:03,4427678,0,2,0,0,0, ,,,124.90,0.00,Credit,,,,0.00,14.98,,139.88,Completed,740,False,False,0,0.00,False,,
+Gavin Warburton,0,2026-06-21 20:00:41,4427673,0,2,0,0,0, ,,,93.90,0.00,Debit,,,,0.00,24.41,,118.31,Completed,740,False,False,0,0,False,,
+George Garner,0,2026-06-21 19:46:44,4427537,0,1,0,0,0, ,,,12.95,0.00,Debit,,,,0.00,1.56,,14.51,Completed,740,False,False,0,0,False,,
+George Garner,239075,2026-06-21 19:45:06,4427518,0,1,0,0,0, ,,,105.95,0.00,Debit,,,,0.00,12.72,,118.67,Completed,740,False,False,0,0.00,False,,
+George Garner,0,2026-06-21 19:43:27,4427495,0,5,0,0,0, ,,,63.75,0.00,Debit,,,,0.00,7.65,,71.40,Completed,740,False,False,0,0,False,,
+George Garner,250090,2026-06-21 19:40:58,4427473,0,1,0,0,0, ,,,18.95,0.00,Debit,,,,0.00,2.28,,21.23,Completed,740,False,False,0,0.00,False,,
+Gavin Warburton,182433,2026-06-21 19:40:44,4427470,0,1,0,0,0, ,,,11.95,0.00,Credit,,,,0.00,1.44,,13.39,Completed,740,False,False,1.34,0.00,False,,
+George Garner,0,2026-06-21 19:36:42,4427422,0,1,0,0,0, ,,,18.95,0.00,Credit,,,,0.00,4.93,,23.88,Completed,740,False,False,2.39,0,False,,
+George Garner,0,2026-06-21 19:34:51,4427400,0,2,0,0,0, ,,,25.90,0.00,Cash,,,,0.00,3.11,,29.01,Completed,740,False,False,0,0,False,,
+George Garner,242009,2026-06-21 19:28:09,4427325,0,1,0,0,0, ,,,16.95,0.00,Credit,,,,0.00,2.04,,18.99,Completed,740,False,False,0,0.00,False,,
+George Garner,0,2026-06-21 19:23:14,4427279,0,3,0,0,0, ,,,130.85,0.00,Credit,,,,0.00,15.70,,146.55,Completed,740,False,False,0,0,False,,
+Gavin Warburton,116430,2026-06-21 19:21:42,4427261,0,1,0,0,0, ,,,27.95,0.00,Debit,,,,0.00,3.36,,31.31,Completed,740,False,False,0,0.00,False,,
+George Garner,0,2026-06-21 19:20:25,4427245,0,1,0,0,0, ,,,29.99,0.00,Debit,,,,0.00,3.60,,33.59,Completed,740,False,False,0,0,False,,
+George Garner,228632,2026-06-21 19:14:56,4427194,0,2,0,0,0, ,,,23.90,0.00,Debit,,,,0.00,2.87,,26.77,Completed,740,False,False,2.68,0.00,False,,
+Gavin Warburton,0,2026-06-21 19:12:24,4427174,0,1,0,0,0, ,,,12.95,0.00,Debit,,,,0.00,1.56,,14.51,Completed,740,False,False,0,0,False,,
+Gavin Warburton,169874,2026-06-21 19:11:21,4427162,0,1,0,0,0, ,,,12.95,0.00,Debit,,,,0.00,1.56,,14.51,Completed,740,False,False,0,0.00,False,,
+George Garner,94077,2026-06-21 19:01:37,4427074,0,1,0,0,0, ,,,5.95,0.00,Debit,,,,0.00,0.72,,6.67,Completed,740,False,False,0,0.00,False,,
+Gavin Warburton,188111,2026-06-21 18:54:24,4427000,0,2,0,0,0, ,,,69.75,0.00,Debit,,,,0.00,8.37,,78.12,Completed,740,False,False,1.00,0.00,False,,
+George Garner,0,2026-06-21 18:53:08,4426983,0,2,0,0,0, ,,,60.90,0.00,Credit,,,,0.00,13.60,,74.50,Completed,740,False,False,0,0,False,,
+George Garner,147967,2026-06-21 18:50:09,4426953,0,1,0,0,0, ,,,12.95,0.00,Debit,,,,0.00,1.56,,14.51,Completed,740,False,False,0,0.00,False,,
+George Garner,140684,2026-06-21 18:47:32,4426927,0,1,0,0,0, ,,,40.95,0.00,Credit,,,,0.00,10.65,,51.60,Completed,740,False,False,0,0.00,False,,
+George Garner,0,2026-06-21 18:44:38,4426899,0,1,0,0,0, ,,,13.95,0.00,Debit,,,,0.00,1.68,,15.63,Completed,740,False,False,0,0,False,,
+George Garner,147598,2026-06-21 18:37:39,4426830,0,1,0,0,0, ,,,44.95,0.00,Cash,,,,0.00,11.69,,56.64,Completed,740,False,False,0,0.00,False,,
+George Garner,100198,2026-06-21 18:36:43,4426826,0,1,0,0,0, ,,,38.95,0.00,Cash,,,,0.00,10.13,,49.08,Completed,740,False,False,0,0.00,False,,
+George Garner,0,2026-06-21 18:35:53,4426819,0,1,0,0,0, ,,,13.95,0.00,Cash,,,,0.00,1.68,,15.63,Completed,740,False,False,0,0,False,,
+George Garner,63222,2026-06-21 18:32:13,4426781,0,1,0,0,0, ,,,38.95,0.00,Cash,,,,0.00,10.13,,49.08,Completed,740,False,False,0,0.00,False,,
+George Garner,94471,2026-06-21 18:31:06,4426763,0,2,0,0,0, ,,,75.90,0.00,Debit,,,,0.00,9.11,,85.01,Completed,740,False,False,0,0.00,False,,
+George Garner,0,2026-06-21 18:25:37,4426706,0,1,0,0,0, ,,,6.49,0.00,Credit,,,,0.00,0.77,,7.26,Completed,740,False,False,0,0,False,,
+Gavin Warburton,0,2026-06-21 18:21:46,4426672,0,2,0,0,0, ,,,50.90,0.00,Cash,,,,0.00,6.10,,57.00,Completed,740,False,False,0,0,False,,
+George Garner,0,2026-06-21 18:21:25,4426667,0,1,0,0,0, ,,,5.95,0.00,Credit,,,,0.00,0.72,,6.67,Completed,740,False,False,1.34,0,False,,
+George Garner,184615,2026-06-21 18:18:54,4426635,0,2,0,0,0, ,,,27.90,0.00,Cash,,,,0.00,3.35,,31.25,Completed,740,False,False,0,0.00,False,,
+George Garner,0,2026-06-21 18:18:20,4426627,0,1,0,0,0, ,,,24.95,0.00,Debit,,,,0.00,3.00,,27.95,Completed,740,False,False,0,0,False,,
+Gavin Warburton,203687,2026-06-21 18:18:00,4426621,0,1,0,0,0, ,,,41.95,0.00,Credit,,,,0.00,5.04,,46.99,Completed,740,False,False,0,0.00,False,,
+George Garner,113531,2026-06-21 18:13:02,4426578,0,1,0,0,0, ,,,77.95,0.00,Debit,,,,0.00,9.36,,87.31,Completed,740,False,False,0,0.00,False,,
+Gavin Warburton,257846,2026-06-21 18:08:34,4426542,0,2,0,0,0, ,,,25.90,0.00,Credit,,,,0.00,3.11,,29.01,Completed,740,False,False,2.91,0.00,False,,
+George Garner,0,2026-06-21 18:06:52,4426518,0,2,0,0,0, ,,,27.90,0.00,Debit,,,,0.00,3.35,,31.25,Completed,740,False,False,0,0,False,,
+George Garner,0,2026-06-21 18:04:51,4426491,0,1,0,0,0, ,,,4.75,0.00,Credit,,,,0.00,0.57,,5.32,Completed,740,False,False,0,0,False,,
+Gavin Warburton,78608,2026-06-21 18:00:04,4426446,0,2,0,0,0, ,,,107.85,0.00,Credit,,,,0.00,12.94,,120.79,Completed,740,False,False,0,0.00,False,,
+Gavin Warburton,0,2026-06-21 17:57:49,4426423,0,1,0,0,0, ,,,33.95,0.00,Debit,,,,0.00,8.83,,42.78,Completed,740,False,False,0,0,False,,
+George Garner,0,2026-06-21 17:55:40,4426403,0,1,0,0,0, ,,,34.95,0.00,Cash,,,,0.00,9.09,,44.04,Completed,740,False,False,0,0,False,,
+Gavin Warburton,183165,2026-06-21 17:55:10,4426392,0,2,0,0,0, ,,,66.90,0.00,Debit,,Promotion price discount,,1.96,12.98,,77.92,Completed,740,False,False,0,0.00,False,,
+George Garner,0,2026-06-21 17:53:47,4426370,0,3,0,0,0, ,,,112.85,0.00,Debit,,Promotion price discount / Promotion price discount,,3.92,24.84,,133.77,Completed,740,False,False,0,0,False,,
+George Garner,144282,2026-06-21 17:51:52,4426345,0,1,0,0,0, ,,,14.95,0.00,Credit,,,,0.00,1.80,,16.75,Completed,740,False,False,0,0.00,False,,
+Gavin Warburton,98441,2026-06-21 17:51:50,4426344,0,1,0,0,0, ,,,13.95,0.00,Debit,,,,0.00,1.68,,15.63,Completed,740,False,False,0,0.00,False,,
+George Garner,0,2026-06-21 17:50:00,4426321,0,2,0,0,0, ,,,59.98,0.00,Cash,,,,0.00,7.20,,67.18,Completed,740,False,False,0,0,False,,
+Gavin Warburton,186143,2026-06-21 17:48:08,4426307,0,1,0,0,0,Gavin Warburton,Product Discount,Manual Discount,9.95,0.00,Credit,,online correction,,0.01,1.20,,11.14,Completed,740,False,False,0,1.00,False,,
+George Garner,0,2026-06-21 17:42:10,4426235,0,3,0,0,0, ,,,96.85,0.00,Credit,,,,0.00,16.09,,112.94,Completed,740,False,False,5.00,0,False,,
+Gavin Warburton,128634,2026-06-21 17:40:06,4426213,0,3,0,0,0, ,,,63.85,0.00,Credit,,,,0.00,7.66,,71.51,Completed,740,False,False,0,0.00,False,,
+Gavin Warburton,212136,2026-06-21 17:33:14,4426131,0,2,0,0,0, ,,,71.90,0.00,Credit,,,,0.00,18.69,,90.59,Completed,740,False,False,0,0.00,False,,
+George Garner,203756,2026-06-21 17:25:30,4426053,0,1,0,0,0, ,,,29.95,0.00,Credit,,,,0.00,7.79,,37.74,Completed,740,False,False,3.78,0.00,False,,
+Gavin Warburton,76703,2026-06-21 17:24:04,4426033,0,3,0,0,0, ,,,30.85,0.00,Debit,,,,0.00,3.70,,34.55,Completed,740,False,False,0,0.00,False,,
+George Garner,0,2026-06-21 17:23:35,4426025,0,2,0,0,0, ,,,66.90,0.00,Credit,,,,0.00,8.02,,74.92,Completed,740,False,False,0,0,False,,
+George Garner,0,2026-06-21 17:23:15,4426020,0,1,0,0,0, ,,,37.95,0.00,Credit,,Promotion price discount,,2.96,9.10,,44.09,Completed,740,False,False,0,0,False,,
+Gavin Warburton,90901,2026-06-21 17:20:25,4425987,0,3,0,0,0, ,,,159.85,0.00,Cash,,,,0.00,19.18,,179.03,Completed,740,False,False,0,0.00,False,,
+Gavin Warburton,245517,2026-06-21 17:09:50,4425874,0,1,0,0,0, ,,,23.95,0.00,Debit,,,,0.00,2.88,,26.83,Completed,740,False,False,0,0.00,False,,
+George Garner,0,2026-06-21 17:08:21,4425857,0,2,1,0,0, ,,,49.44,0.00,Debit,,,,0.00,5.93,,55.37,Completed,740,False,False,1.11,0,False,,
+George Garner,104664,2026-06-21 17:04:31,4425812,0,2,0,0,0, ,,,68.90,0.00,Cash,,Promotion price discount,,1.96,8.04,,74.98,Completed,740,False,False,0,0.00,False,,
+George Garner,112925,2026-06-21 17:03:02,4425799,0,2,0,0,0, ,,,78.90,0.00,Debit,,Promotion price discount,,1.96,20.01,,96.95,Completed,740,False,False,3.00,0.00,False,,
+George Garner,0,2026-06-21 17:00:52,4425765,0,1,0,0,0, ,,,28.95,0.00,Debit,,,,0.00,7.53,,36.48,Completed,740,False,False,0,0,False,,
+George Garner,87208,2026-06-21 16:56:52,4425725,0,2,0,0,0, ,,,68.90,0.00,Credit,,,,0.00,17.91,,86.81,Completed,740,False,False,0,0.00,False,,
+George Garner,0,2026-06-21 16:54:16,4425699,0,1,0,0,0, ,,,38.95,0.00,Debit,,,,0.00,4.68,,43.63,Completed,740,False,False,0,0,False,,
+George Garner,0,2026-06-21 16:42:44,4425591,0,1,0,0,0, ,,,1.95,0.00,Debit,,,,0.00,0.24,,2.19,Completed,740,False,False,0,0,False,,
+George Garner,86991,2026-06-21 16:39:44,4425567,0,1,0,0,0, ,,,15.95,0.00,Debit,,,,0.00,1.92,,17.87,Completed,740,False,False,0,0.00,False,,
+Gavin Warburton,184317,2026-06-21 16:34:03,4425503,0,1,0,0,0, ,,,24.95,0.00,Debit,,,,0.00,3.00,,27.95,Completed,740,False,False,0,0.00,False,,
+George Garner,234497,2026-06-21 16:32:58,4425490,0,1,0,0,0, ,,,38.95,0.00,Debit,,,,0.00,10.13,,49.08,Completed,740,False,False,0,0.00,False,,
+George Garner,0,2026-06-21 16:25:24,4425400,0,1,0,0,0, ,,,15.95,0.00,Debit,,,,0.00,1.92,,17.87,Completed,740,False,False,0.02,0,False,,
+Clarence McNeill,92691,2026-06-21 16:19:57,4425335,0,2,0,0,0, ,,,43.90,0.00,Credit,,,,0.00,10.16,,54.06,Completed,740,False,False,5.00,0.00,False,,
+Clarence McNeill,0,2026-06-21 16:14:51,4425280,0,1,0,0,0, ,,,5.95,0.00,Cash,,,,0.00,0.72,,6.67,Completed,740,False,False,0,0,False,,
+Clarence McNeill,0,2026-06-21 16:08:00,4425204,0,1,0,0,0, ,,,4.95,0.00,Debit,,,,0.00,0.60,,5.55,Completed,740,False,False,0,0,False,,
+Clarence McNeill,177017,2026-06-21 16:05:52,4425183,0,4,0,0,0, ,,,91.80,0.00,Debit,,,,0.00,11.02,,102.82,Completed,740,False,False,2.00,0.00,False,,
+George Garner,0,2026-06-21 16:05:10,4425176,0,1,0,0,0, ,,,39.95,0.00,Credit,,,,0.00,10.39,,50.34,Completed,740,False,False,0,0,False,,
+Clarence McNeill,191524,2026-06-21 16:02:58,4425156,0,4,0,0,0, ,,,81.80,0.00,Debit/Cash,,,,0.00,19.04,,100.84,Completed,740,False,False,0,0.00,False,,
+George Garner,147098,2026-06-21 16:01:06,4425141,0,1,0,0,0, ,,,5.95,0.00,Cash,,,,0.00,0.72,,6.67,Completed,740,False,False,0,0.00,False,,
+Clarence McNeill,171763,2026-06-21 15:56:27,4425088,0,1,0,0,0, ,,,92.85,0.00,Credit,,,,0.00,24.14,,116.99,Completed,740,False,False,0,0.00,False,,
+Gavin Warburton,181034,2026-06-21 15:43:26,4424934,0,1,0,0,0, ,,,47.95,0.00,Credit,,Promotion price discount,,3.96,11.44,,55.43,Completed,740,False,False,0,0.00,False,,
+Clarence McNeill,98058,2026-06-21 15:41:17,4424911,0,1,0,0,0, ,,,29.95,0.00,Debit,,Promotion price discount,,1.96,3.36,,31.35,Completed,740,False,False,0,0.00,False,,
+Clarence McNeill,0,2026-06-21 15:40:11,4424902,0,2,0,0,0, ,,,9.90,0.00,Credit,,,,0.00,1.19,,11.09,Completed,740,False,False,0,0,False,,
+Clarence McNeill,89478,2026-06-21 15:36:39,4424856,0,6,1,0,0, ,,,45.70,0.00,Debit,,Promotion price discount / Promotion price discount,,1.92,5.25,,49.03,Completed,740,False,False,0,0.00,False,,
+Clarence McNeill,0,2026-06-21 15:34:19,4424825,0,2,0,0,0, ,,,27.90,0.00,Cash,,,,0.00,3.35,,31.25,Completed,740,False,False,0,0,False,,
+Clarence McNeill,88207,2026-06-21 15:27:37,4424742,0,1,0,0,0, ,,,21.95,0.00,Cash,,,,0.00,2.64,,24.59,Completed,740,False,False,0,0.00,False,,
+Clarence McNeill,0,2026-06-21 15:26:14,4424732,0,2,0,0,0, ,,,47.90,0.00,Credit,,,,0.00,5.75,,53.65,Completed,740,False,False,0,0,False,,
+Clarence McNeill,0,2026-06-21 15:20:56,4424668,0,1,0,0,0, ,,,5.95,0.00,Debit,,,,0.00,0.72,,6.67,Completed,740,False,False,0,0,False,,
+Clarence McNeill,0,2026-06-21 15:18:37,4424637,0,2,1,0,0, ,,,31.90,0.00,Credit,,,,0.00,3.83,,35.73,Completed,740,False,False,0,0,False,,
+Clarence McNeill,83899,2026-06-21 15:15:32,4424602,0,1,0,0,0, ,,,38.95,0.00,Cash/Credit,,,,0.00,10.13,,49.08,Completed,740,False,False,0,0.00,False,,
+Clarence McNeill,98353,2026-06-21 15:14:41,4424587,0,1,0,0,0, ,,,11.95,0.00,Credit,,,,0.00,1.44,,13.39,Completed,740,False,False,0,0.00,False,,
+Clarence McNeill,0,2026-06-21 15:13:57,4424578,0,1,0,0,0, ,,,27.95,0.00,Credit,,Promotion price discount,,1.96,3.12,,29.11,Completed,740,False,False,0,0,False,,
+Clarence McNeill,83761,2026-06-21 15:08:40,4424521,0,2,0,0,0, ,,,41.90,0.00,Debit,,Promotion price discount,,2.96,9.58,,48.52,Completed,740,False,False,0,0.00,False,,
+Gavin Warburton,0,2026-06-21 15:04:37,4424468,0,2,0,0,0, ,,,14.90,0.00,Debit,,,,0.00,1.78,,16.68,Completed,740,False,False,0,0,False,,
+Clarence McNeill,111510,2026-06-21 15:04:36,4424467,0,1,0,0,0, ,,,24.49,0.00,Credit,,,,0.00,2.93,,27.42,Completed,740,False,False,0,0.00,False,,
+Clarence McNeill,50505,2026-06-21 15:02:57,4424450,0,2,0,0,0, ,,,54.90,0.00,Credit,,,,0.00,12.04,,66.94,Completed,740,False,False,0,0.00,False,,
+Clarence McNeill,115807,2026-06-21 15:00:36,4424423,0,1,0,0,0, ,,,21.95,0.00,Debit,,,,0.00,2.64,,24.59,Completed,740,False,False,0,0.00,False,,
+Clarence McNeill,108002,2026-06-21 14:55:10,4424352,0,1,0,0,0, ,,,24.95,0.00,Credit,,,,0.00,3.00,,27.95,Completed,740,False,False,0,0.00,False,,
+Clarence McNeill,94551,2026-06-21 14:52:44,4424316,0,1,0,0,0, ,,,12.95,0.00,Cash,,,,0.00,1.56,,14.51,Completed,740,False,False,0,0.00,False,,
+Gavin Warburton,0,2026-06-21 14:45:44,4424240,0,1,0,0,0, ,,,12.95,0.00,Credit,,,,0.00,1.56,,14.51,Completed,740,False,False,0,0,False,,
+Gavin Warburton,59368,2026-06-21 14:44:15,4424219,0,1,0,0,0, ,,,27.95,0.00,Debit,,,,0.00,3.36,,31.31,Completed,740,False,False,1.00,0.00,False,,
+Clarence McNeill,145596,2026-06-21 14:43:10,4424206,0,2,0,0,0, ,,,73.90,0.00,Credit,,,,0.00,14.46,,88.36,Completed,740,False,False,0,0.00,False,,
+Gavin Warburton,231215,2026-06-21 14:43:02,4424205,0,1,0,0,0, ,,,38.95,0.00,Debit,,Promotion price discount,,1.96,9.62,,46.61,Completed,740,False,False,0.94,0.00,False,,
+Clarence McNeill,247011,2026-06-21 14:37:31,4424140,0,1,0,0,0, ,,,18.95,0.00,Debit,,,,0.00,2.28,,21.23,Completed,740,False,False,0,0.00,False,,
+Gavin Warburton,0,2026-06-21 14:35:05,4424117,0,1,1,0,0, ,,,43.95,0.00,Cash,,Promotion price discount,,1.96,10.92,,52.91,Completed,740,False,False,0,0,False,,
+Gavin Warburton,0,2026-06-21 14:33:46,4424104,0,1,0,0,0, ,,,5.95,0.00,Credit,,,,0.00,0.72,,6.67,Completed,740,False,False,0,0,False,,
+Gavin Warburton,0,2026-06-21 14:33:16,4424097,0,1,0,0,0, ,,,30.95,0.00,Debit,,,,0.00,3.72,,34.67,Completed,740,False,False,0,0,False,,
+Clarence McNeill,0,2026-06-21 14:32:14,4424081,0,1,0,0,0, ,,,28.95,0.00,Debit,,,,0.00,7.53,,36.48,Completed,740,False,False,0,0,False,,
+Clarence McNeill,192184,2026-06-21 14:28:59,4424048,0,2,0,0,0, ,,,27.90,0.00,Cash,,,,0.00,3.35,,31.25,Completed,740,False,False,0,0.00,False,,
+Clarence McNeill,0,2026-06-21 14:27:48,4424036,0,1,0,0,0, ,,,55.95,0.00,Credit,,,,0.00,6.72,,62.67,Completed,740,False,False,5.55,0,False,,
+Clarence McNeill,0,2026-06-21 14:26:53,4424019,0,1,0,0,0, ,,,9.95,0.00,Cash,,,,0.00,1.20,,11.15,Completed,740,False,False,0,0,False,,
+Clarence McNeill,0,2026-06-21 14:25:19,4423999,0,3,0,0,0, ,,,103.85,0.00,Credit,,,,0.00,23.65,,127.50,Completed,740,False,False,0,0,False,,
+Clarence McNeill,210011,2026-06-21 14:24:39,4423994,0,1,0,0,0, ,,,40.95,0.00,Credit,,,,0.00,10.65,,51.60,Completed,740,False,False,0,0.00,False,,
+Clarence McNeill,90062,2026-06-21 14:22:45,4423966,0,1,0,0,0, ,,,38.95,0.00,Credit,,,,0.00,4.68,,43.63,Completed,740,False,False,0,0.00,False,,
+Clarence McNeill,0,2026-06-21 14:20:49,4423947,0,3,0,0,0, ,,,32.85,0.00,Debit,,,,0.00,3.94,,36.79,Completed,740,False,False,0,0,False,,
+Clarence McNeill,85274,2026-06-21 14:18:24,4423931,0,2,0,0,0, ,,,63.90,0.00,Debit,,,,0.00,13.12,,77.02,Completed,740,False,False,0,0.00,False,,
+Clarence McNeill,99385,2026-06-21 14:04:14,4423781,0,3,0,0,0, ,,,83.85,0.00,Debit,,Promotion price discount,,5.96,9.34,,87.23,Completed,740,False,False,2.50,0.00,False,,
+Clarence McNeill,199511,2026-06-21 13:56:38,4423710,0,3,0,0,0, ,,,80.85,0.00,Debit,,Promotion price discount,,1.96,9.46,,88.35,Completed,740,False,False,0,0.00,False,,
+Clarence McNeill,0,2026-06-21 13:54:11,4423692,0,1,0,0,0, ,,,12.95,0.00,Cash,,,,0.00,1.56,,14.51,Completed,740,False,False,0,0,False,,
+Clarence McNeill,148585,2026-06-21 13:52:21,4423671,0,2,0,0,0, ,,,37.90,0.00,Debit,,,,0.00,4.55,,42.45,Completed,740,False,False,0,0.00,False,,
+Clarence McNeill,128777,2026-06-21 13:48:27,4423623,0,2,0,0,0, ,,,42.90,0.00,Debit,,,,0.00,5.14,,48.04,Completed,740,False,False,0,0.00,False,,
+Clarence McNeill,108429,2026-06-21 13:45:30,4423584,0,2,0,0,0, ,,,41.90,0.00,Debit,,,,0.00,8.66,,50.56,Completed,740,False,False,0,0.00,False,,
+Clarence McNeill,103068,2026-06-21 13:40:52,4423545,0,1,0,0,0, ,,,38.95,0.00,Debit,,Promotion price discount,,1.96,9.62,,46.61,Completed,740,False,False,0,0.00,False,,
+Gavin Warburton,0,2026-06-21 13:39:05,4423523,0,2,0,0,0, ,,,84.90,0.00,Debit/Cash,,,,0.00,22.07,,106.97,Completed,740,False,False,0,0,False,,
+Clarence McNeill,88844,2026-06-21 13:38:34,4423515,0,2,0,0,0, ,,,23.90,0.00,Debit,,,,0.00,2.87,,26.77,Completed,740,False,False,0,0.00,False,,
+Clarence McNeill,70233,2026-06-21 13:34:35,4423475,0,3,0,0,0, ,,,86.85,0.00,Credit,,,,0.00,14.89,,101.74,Completed,740,False,False,10.18,0.00,False,,
+Clarence McNeill,140086,2026-06-21 13:24:36,4423355,0,1,0,0,0, ,,,43.95,0.00,Cash,,Promotion price discount,,1.96,10.92,,52.91,Completed,740,False,False,0,0.00,False,,
+Clarence McNeill,174287,2026-06-21 13:20:31,4423310,0,1,0,0,0, ,,,9.95,0.00,Debit,,,,0.00,1.20,,11.15,Completed,740,False,False,2.00,0.00,False,,
+Clarence McNeill,257020,2026-06-21 13:18:40,4423288,0,4,0,0,0, ,,,126.80,0.00,Debit,,,,0.00,15.22,,142.02,Completed,740,False,False,0,0.00,False,,
+Clarence McNeill,97889,2026-06-21 13:11:17,4423211,0,2,0,0,0, ,,,17.90,0.00,Debit,,,,0.00,2.15,,20.05,Completed,740,False,False,0.50,0.00,False,,
+Clarence McNeill,131200,2026-06-21 13:10:00,4423192,0,2,0,0,0, ,,,91.70,0.00,Credit,,,,0.00,11.00,,102.70,Completed,740,False,False,0,0.00,False,,
+Clarence McNeill,189392,2026-06-21 13:07:29,4423167,0,1,0,0,0, ,,,5.95,0.00,Credit,,,,0.00,0.72,,6.67,Completed,740,False,False,0,0.00,False,,
+Clarence McNeill,178213,2026-06-21 13:01:23,4423116,0,1,0,0,0, ,,,31.95,0.00,Debit,,,,0.00,8.31,,40.26,Completed,740,False,False,0,0.00,False,,
+Clarence McNeill,0,2026-06-21 12:59:50,4423096,0,1,0,0,0, ,,,41.95,0.00,Credit,,,,0.00,5.04,,46.99,Completed,740,False,False,0,0,False,,
+Kirtigan Sivalingam,131359,2026-06-21 12:52:44,4423027,0,1,0,0,0, ,,,5.95,0.00,Debit,,,,0.00,0.72,,6.67,Completed,740,False,False,0,0.00,False,,
+Clarence McNeill,87211,2026-06-21 12:51:54,4423018,0,1,0,0,0, ,,,17.95,0.00,Cash,,,,0.00,2.16,,20.11,Completed,740,False,False,0,0.00,False,,
+Kirtigan Sivalingam,0,2026-06-21 12:51:09,4423010,0,1,0,0,0, ,,,9.95,0.00,Cash,,,,0.00,1.20,,11.15,Completed,740,False,False,0,0,False,,
+Clarence McNeill,0,2026-06-21 12:41:11,4422909,0,1,0,0,0, ,,,8.95,0.00,Credit,,,,0.00,1.08,,10.03,Completed,740,False,False,0,0,False,,
+Clarence McNeill,0,2026-06-21 12:40:00,4422903,0,1,0,0,0, ,,,28.95,0.00,Credit,,,,0.00,7.53,,36.48,Completed,740,False,False,0,0,False,,
+Kirtigan Sivalingam,170508,2026-06-21 12:37:46,4422883,0,2,0,0,0, ,,,26.90,0.00,Debit,,,,0.00,3.22,,30.12,Completed,740,False,False,0,0.00,False,,
+Clarence McNeill,90184,2026-06-21 12:33:31,4422848,0,2,0,0,0, ,,,70.90,0.00,Credit,,,,0.00,18.43,,89.33,Completed,740,False,False,0,0.00,False,,
+Clarence McNeill,0,2026-06-21 12:30:48,4422824,0,1,1,0,0, ,,,9.95,0.00,Debit/Cash,,,,0.00,1.20,,11.15,Completed,740,False,False,0,0,False,,
+Clarence McNeill,101557,2026-06-21 12:19:43,4422731,0,4,0,0,0, ,,,42.80,0.00,Debit,,,,0.00,5.14,,47.94,Completed,740,False,False,1.00,0.00,False,,
+Clarence McNeill,0,2026-06-21 12:17:43,4422709,0,1,0,0,0, ,,,17.95,0.00,Debit,,,,0.00,2.16,,20.11,Completed,740,False,False,0,0,False,,
+Clarence McNeill,0,2026-06-21 12:12:58,4422658,0,1,0,0,0, ,,,44.95,0.00,Cash,,,,0.00,11.69,,56.64,Completed,740,False,False,0,0,False,,
+Clarence McNeill,88999,2026-06-21 12:07:24,4422605,0,1,0,0,0, ,,,24.95,0.00,Cash,,,,0.00,3.00,,27.95,Completed,740,False,False,0,0.00,False,,
+Clarence McNeill,238108,2026-06-21 11:51:20,4422461,0,3,0,0,0, ,,,152.85,0.00,Credit,,Promotion price discount,,5.96,17.62,,164.51,Completed,740,False,False,0,0.00,False,,
+Kirtigan Sivalingam,0,2026-06-21 11:49:48,4422446,0,1,0,0,0, ,,,15.95,0.00,Debit,,,,0.00,1.92,,17.87,Completed,740,False,False,0,0,False,,
+Kirtigan Sivalingam,176937,2026-06-21 11:48:46,4422441,0,2,0,0,0, ,,,16.90,0.00,Credit,,,,0.00,2.02,,18.92,Completed,740,False,False,0,0.00,False,,
+Kirtigan Sivalingam,0,2026-06-21 11:47:27,4422431,0,1,0,0,0, ,,,21.95,0.00,Credit,,,,0.00,2.64,,24.59,Completed,740,False,False,0,0,False,,
+Clarence McNeill,251257,2026-06-21 11:47:21,4422429,0,2,0,0,0, ,,,11.90,0.00,Credit,,,,0.00,1.43,,13.33,Completed,740,False,False,3.00,0.00,False,,
+Clarence McNeill,0,2026-06-21 11:45:45,4422416,0,1,0,0,0, ,,,37.95,0.00,Debit,,,,0.00,9.87,,47.82,Completed,740,False,False,0,0,False,,
+Clarence McNeill,217521,2026-06-21 11:43:14,4422398,0,1,0,0,0, ,,,31.95,0.00,Debit,,,,0.00,8.31,,40.26,Completed,740,False,False,0,0.00,False,,
+Clarence McNeill,0,2026-06-21 11:40:23,4422378,0,1,0,0,0, ,,,38.95,0.00,Cash,,,,0.00,10.13,,49.08,Completed,740,False,False,0,0,False,,
+Clarence McNeill,0,2026-06-21 11:36:28,4422350,0,2,0,0,0, ,,,9.90,0.00,Debit,,,,0.00,1.19,,11.09,Completed,740,False,False,0,0,False,,
+Clarence McNeill,0,2026-06-21 11:34:49,4422336,0,1,0,0,0, ,,,29.99,0.00,Cash,,,,0.00,3.60,,33.59,Completed,740,False,False,0,0,False,,
+Clarence McNeill,139541,2026-06-21 11:27:52,4422282,0,1,0,0,0, ,,,31.95,0.00,Credit,,,,0.00,8.31,,40.26,Completed,740,False,False,2.02,0.00,False,,
+Clarence McNeill,48395,2026-06-21 11:25:44,4422262,0,1,0,0,0, ,,,25.95,0.00,Credit,,,,0.00,3.12,,29.07,Completed,740,False,False,0,0.00,False,,
+Kirtigan Sivalingam,236091,2026-06-21 11:22:02,4422233,0,1,0,0,0, ,,,16.95,0.00,Debit,,,,0.00,2.04,,18.99,Completed,740,False,False,2.00,0.00,False,,
+Clarence McNeill,0,2026-06-21 11:18:16,4422208,0,2,0,0,0, ,,,27.90,0.00,Debit,,,,0.00,3.35,,31.25,Completed,740,False,False,0,0,False,,
+Clarence McNeill,0,2026-06-21 11:13:48,4422173,0,1,0,0,0, ,,,45.95,0.00,Credit,,,,0.00,5.52,,51.47,Completed,740,False,False,0,0,False,,
+Clarence McNeill,60412,2026-06-21 11:06:03,4422091,0,1,0,0,0, ,,,38.95,0.00,Credit,,,,0.00,10.13,,49.08,Completed,740,False,False,0,0.00,False,,
+Clarence McNeill,0,2026-06-21 10:59:43,4422039,0,1,0,0,0, ,,,44.95,0.00,Debit,,,,0.00,11.69,,56.64,Completed,740,False,False,2.84,0,False,,
+Clarence McNeill,0,2026-06-21 10:49:49,4421949,0,1,0,0,0, ,,,44.95,0.00,Credit,,,,0.00,5.40,,50.35,Completed,740,False,False,0,0,False,,
+Clarence McNeill,185665,2026-06-21 10:47:16,4421926,0,1,0,0,0, ,,,29.95,0.00,Credit,,Promotion price discount,,1.96,3.36,,31.35,Completed,740,False,False,0,0.00,False,,
+Kirtigan Sivalingam,173444,2026-06-21 10:40:53,4421872,0,1,0,0,0, ,,,28.95,0.00,Credit,,,,0.00,7.53,,36.48,Completed,740,False,False,0,0.00,False,,
+Clarence McNeill,71093,2026-06-21 10:38:45,4421855,0,2,0,0,0, ,,,19.90,0.00,Credit,,,,0.00,2.39,,22.29,Completed,740,False,False,2.00,0.00,False,,
+Clarence McNeill,237643,2026-06-21 10:34:25,4421816,0,2,0,0,0, ,,,82.90,0.00,Cash,,,,0.00,16.24,,99.14,Completed,740,False,False,0,0.00,False,,
+Clarence McNeill,0,2026-06-21 10:13:57,4421651,0,2,0,0,0, ,,,21.90,0.00,Credit,,,,0.00,2.63,,24.53,Completed,740,False,False,0,0,False,,
+Clarence McNeill,0,2026-06-21 10:07:42,4421617,0,1,0,0,0, ,,,43.95,0.00,Debit,,,,0.00,5.28,,49.23,Completed,740,False,False,0,0,False,,
+Clarence McNeill,103121,2026-06-21 10:02:45,4421573,0,1,0,0,0, ,,,129.95,0.00,Debit,,,,0.00,15.60,,145.55,Completed,740,False,False,1.00,0.00,False,,
+Kirtigan Sivalingam,0,2026-06-21 09:55:52,4421532,0,1,0,0,0, ,,,18.95,0.00,Cash,,,,0.00,2.28,,21.23,Completed,740,False,False,0,0,False,,
+Clarence McNeill,0,2026-06-21 09:54:51,4421521,0,2,0,0,0, ,,,19.44,0.00,Cash/Credit,,,,0.00,2.33,,21.77,Completed,740,False,False,0,0,False,,
+Kirtigan Sivalingam,218654,2026-06-21 09:54:31,4421517,0,2,0,0,0, ,,,33.90,0.00,Credit,,,,0.00,4.07,,37.97,Completed,740,False,False,5.70,0.00,False,,
+Clarence McNeill,0,2026-06-21 09:43:42,4421455,0,1,0,0,0, ,,,4.20,0.00,Debit,,,,0.00,0.50,,4.70,Completed,740,False,False,0,0,False,,
+Kirtigan Sivalingam,103827,2026-06-21 09:33:52,4421398,0,1,0,0,0, ,,,47.95,0.00,Credit,,,,0.00,5.76,,53.71,Completed,740,False,False,0,0.00,False,,
+Kirtigan Sivalingam,91269,2026-06-21 09:26:56,4421346,0,1,0,0,0, ,,,39.95,0.00,Debit,,,,0.00,4.80,,44.75,Completed,740,False,False,0,0.00,False,,
+Clarence McNeill,110277,2026-06-21 09:26:01,4421340,0,2,0,0,0, ,,,105.90,0.00,Credit,,,,0.00,18.16,,124.06,Completed,740,False,False,0,0.00,False,,
+Kirtigan Sivalingam,0,2026-06-21 09:09:53,4421239,0,2,0,0,0, ,,,19.85,0.00,Cash,,,,0.00,2.38,,22.23,Completed,740,False,False,0,0,False,,
+Kirtigan Sivalingam,150405,2026-06-21 09:04:07,4421190,0,1,0,0,0, ,,,43.95,0.00,Credit,,,,0.00,11.43,,55.38,Completed,740,False,False,0,0.00,False,,
+</script>
 <script>
 /* ============================================================
-   CONFIG — paste your live URL here to auto-load on open.
-   Leave blank to start from the embedded snapshot.
+   CONFIG
    ============================================================ */
 const CONFIG = {
-  DEFAULT_SOURCE_URL: "",   // e.g. your Google Sheets "Publish to web → CSV" link or Apps Script URL
-  REFRESH_MINUTES: 60,      // hourly
-  DISCOUNT_TARGET_PCT: 3.0  // budtender/store discount% above this is flagged
+  STORE_LABEL: "Imagine Cannabis #206",   // shown in the header
+  API_URL: "https://script.google.com/macros/s/AKfycbzOB-0a6RHo3yrCqTUL8rYOII9H4FWZnVWAhA_ihTUOHGSpNLmS6lrCPQDknNyDyBj99A/exec",                             // paste your Apps Script /exec URL here to auto-connect on open
+  REFRESH_MINUTES: 10
 };
 
-/* The report you uploaded, embedded so the dashboard works offline. */
-const EMBEDDED_CSV = `Report Generated: 6/23/2026 6:28:51 PM
-branchName,location,storeId,EmployeeId,Budtender,SalesOfAverageByOrder,Avgtransactiontime,Totalhours,Totalminutes,NumberOfOrders,DebitTotal,CashTotal,CreditsTotal,CannabisGrosssales,NoncannabisGrosssales,CannabisQuantity,NoncannabisQuantity,Cannabispercentage,Noncannabispercentage,TotalGrosssales,TotalDiscounts,TotalTips
-Imagine Cannabis #206 - White Rock,White Rock,206,407,Gavin Warburton,34.23,0,0,0.00,23,528.36,133.05,238.13,767.50,19.85,30.000,3.000,97.48,2.52,787.35,17.760000,6.73
-Imagine Cannabis #206 - White Rock,White Rock,206,688,Cian Morris-Gracey,38.70,0,0,0.00,52,852.60,338.73,1154.29,1988.45,23.80,86.000,4.000,98.82,1.18,2012.25,22.640000,38.05`;
-
 /* ---------- state ---------- */
-let state = { mode:"embedded", url:"", sort:"atv", target:CONFIG.DISCOUNT_TARGET_PCT, intervalMin:CONFIG.REFRESH_MINUTES };
+let state = { win:"today", sort:"gross", url:"", intervalMin:CONFIG.REFRESH_MINUTES };
+let RECORDS = [];          // deduped completed transactions
 let timer=null, countdown=null, nextAt=0;
 
 /* ---------- CSV parsing ---------- */
@@ -272,275 +995,258 @@ function parseCSV(text){
   const rows=[]; let row=[], field="", q=false;
   for(let i=0;i<text.length;i++){
     const c=text[i];
-    if(q){
-      if(c==='"'){ if(text[i+1]==='"'){field+='"';i++;} else q=false; }
-      else field+=c;
-    } else {
-      if(c==='"') q=true;
-      else if(c===','){ row.push(field); field=""; }
+    if(q){ if(c==='"'){ if(text[i+1]==='"'){field+='"';i++;} else q=false; } else field+=c; }
+    else { if(c==='"') q=true; else if(c===','){ row.push(field); field=""; }
       else if(c==='\n'){ row.push(field); rows.push(row); row=[]; field=""; }
-      else if(c==='\r'){ /* skip */ }
-      else field+=c;
-    }
+      else if(c==='\r'){} else field+=c; }
   }
   if(field.length||row.length){ row.push(field); rows.push(row); }
-  return rows.filter(r=>r.length>1 || (r.length===1 && r[0].trim()!==""));
+  return rows;
+}
+const num=v=>{ const n=parseFloat(String(v).replace(/[^0-9.\-]/g,"")); return isFinite(n)?n:0; };
+
+/* Order Details CSV → array of transactions. Dedupes by OrderNumber, keeps Completed only. */
+function parseOrders(text){
+  const rows=parseCSV(text);
+  let h=-1;
+  for(let i=0;i<rows.length;i++){
+    const low=rows[i].map(x=>x.trim().toLowerCase());
+    if(low.includes("ordernumber") && low.includes("createddate")){ h=i; break; }
+  }
+  if(h===-1) throw new Error("Couldn't find the Order Details header (need OrderNumber and CreatedDate columns).");
+  const head=rows[h].map(x=>x.trim().toLowerCase());
+  const col=n=>head.indexOf(n.toLowerCase());
+  const cEmp=col("Employee"), cDate=col("CreatedDate"), cOrder=col("OrderNumber"),
+        cUnits=col("SoldProducts"), cGross=col("SubTotal"), cStatus=col("Status");
+  if(cEmp<0||cDate<0||cOrder<0||cUnits<0||cGross<0) throw new Error("Missing a required column (Employee, CreatedDate, OrderNumber, SoldProducts, SubTotal).");
+  const seen=new Set(), out=[];
+  let generated="";
+  for(let i=0;i<h;i++){ const m=rows[i].join(",").match(/Report Generated:\s*(.+)/i); if(m) generated=m[1].trim(); }
+  for(let i=h+1;i<rows.length;i++){
+    const r=rows[i]; if(!r||r.length<head.length) continue;
+    if(cStatus>=0 && r[cStatus].trim() && r[cStatus].trim().toLowerCase()!=="completed") continue;
+    const ord=r[cOrder].trim(); if(!ord || seen.has(ord)) continue; seen.add(ord);
+    const emp=(r[cEmp]||"").trim()||"—";
+    const date=(r[cDate]||"").trim().slice(0,10);   // YYYY-MM-DD
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(date)) continue;
+    out.push({ order:ord, emp, date, units:num(r[cUnits]), gross:num(r[cGross]) });
+  }
+  if(!out.length) throw new Error("No completed transactions found in this file.");
+  return { records:out, generated };
 }
 
-function num(v){ const n=parseFloat(String(v).replace(/[^0-9.\-]/g,"")); return isFinite(n)?n:0; }
+/* ---------- date windows (Sunday-start week) ---------- */
+function pad(n){ return String(n).padStart(2,"0"); }
+function ymd(d){ return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate()); }
+function windows(){
+  const now=new Date();
+  const today=ymd(now);
+  const start=new Date(now); start.setDate(now.getDate()-now.getDay());  // getDay(): Sun=0
+  return { today:{from:today,to:today}, week:{from:ymd(start),to:today} };
+}
 
-/* Turn raw CSV text into {generated, store, people[]} with KPIs computed. */
-function buildModel(text){
-  const rows=parseCSV(text);
-  let generated="";
-  let headerIdx=rows.findIndex(r=>r[0].trim().toLowerCase()==="branchname");
-  if(headerIdx===-1) throw new Error("Couldn't find the column header row (expected it to start with 'branchName').");
-  for(let i=0;i<headerIdx;i++){
-    const m=rows[i].join(",").match(/Report Generated:\s*(.+)/i);
-    if(m) generated=m[1].trim();
+/* ---------- KPI computation ---------- */
+function compute(records, w){
+  const inWin=records.filter(r=>r.date>=w.from && r.date<=w.to);
+  const byEmp=new Map();
+  let tx=0, gross=0, units=0;
+  for(const r of inWin){
+    tx++; gross+=r.gross; units+=r.units;
+    const e=byEmp.get(r.emp)||{name:r.emp,tx:0,gross:0,units:0};
+    e.tx++; e.gross+=r.gross; e.units+=r.units; byEmp.set(r.emp,e);
   }
-  const header=rows[headerIdx].map(h=>h.trim());
-  const idx=name=>header.findIndex(h=>h.toLowerCase()===name.toLowerCase());
-  const cI={
-    branch:idx("branchName"), loc:idx("location"), store:idx("storeId"), eid:idx("EmployeeId"),
-    name:idx("Budtender"), orders:idx("NumberOfOrders"), gross:idx("TotalGrosssales"),
-    disc:idx("TotalDiscounts"), tips:idx("TotalTips"),
-    cq:idx("CannabisQuantity"), ncq:idx("NoncannabisQuantity")
-  };
-  const people=[];
-  for(let i=headerIdx+1;i<rows.length;i++){
-    const r=rows[i]; if(!r[cI.name] || !r[cI.name].trim()) continue;
-    const orders=num(r[cI.orders]);
-    const gross=num(r[cI.gross]);
-    const disc=num(r[cI.disc]);
-    const tips=num(r[cI.tips]);
-    const units=num(r[cI.cq])+num(r[cI.ncq]);
-    people.push({
-      name:r[cI.name].trim(), eid:r[cI.eid], orders, gross, disc, tips, units,
-      atv: orders? gross/orders : 0,
-      upt: orders? units/orders : 0,
-      discPct: gross? disc/gross*100 : 0
-    });
-  }
-  if(!people.length) throw new Error("No budtender rows found in the report.");
-  const t=people.reduce((a,p)=>({orders:a.orders+p.orders,gross:a.gross+p.gross,disc:a.disc+p.disc,tips:a.tips+p.tips,units:a.units+p.units}),{orders:0,gross:0,disc:0,tips:0,units:0});
-  const store={
-    ...t,
-    atv: t.orders? t.gross/t.orders : 0,
-    upt: t.orders? t.units/t.orders : 0,
-    discPct: t.gross? t.disc/t.gross*100 : 0,
-    branch:(people.length&&rows[headerIdx+1][cI.branch])||"", loc:rows[headerIdx+1]?rows[headerIdx+1][cI.loc]:"", id:rows[headerIdx+1]?rows[headerIdx+1][cI.store]:""
-  };
-  return { generated, store, people };
+  const people=[...byEmp.values()].map(e=>({...e, atv:e.tx?e.gross/e.tx:0, upt:e.tx?e.units/e.tx:0}));
+  const store={ tx, gross, units, atv:tx?gross/tx:0, upt:tx?units/tx:0, staff:people.length };
+  return { store, people };
 }
 
 /* ---------- formatting ---------- */
 const fMoney=n=>n.toLocaleString("en-CA",{minimumFractionDigits:2,maximumFractionDigits:2});
 const fInt=n=>Math.round(n).toLocaleString("en-CA");
-const curVal=(n)=>`<span class="cur">$</span>${fMoney(n)}`;
-const pctVal=(n)=>`${n.toFixed(2)}<span class="suf">%</span>`;
-const numVal=(n)=>n.toFixed(2);
-
-let MODEL=null;
-
-function render(model){
-  MODEL=model;
-  const s=model.store;
-  document.getElementById("storeName").textContent = s.branch ? s.branch.split(" - ")[0] : "Store";
-  document.getElementById("storeLoc").innerHTML = `<b>${s.loc||"—"}</b> · Store ${s.id||"—"}`;
-  document.getElementById("genTime").textContent = model.generated||"—";
-  document.getElementById("heroMeta").textContent = `${model.people.length} budtenders · ${fInt(s.orders)} orders`;
-
-  document.getElementById("vAtv").innerHTML = curVal(s.atv);
-  document.getElementById("vUpt").innerHTML = numVal(s.upt);
-  document.getElementById("vDisc").innerHTML = pctVal(s.discPct);
-  document.getElementById("kDisc").classList.toggle("over", s.discPct>state.target);
-  document.getElementById("discSub").textContent = `discount ÷ gross · target ${state.target}%`;
-
-  document.getElementById("sOrders").textContent=fInt(s.orders);
-  document.getElementById("sUnits").textContent=fInt(s.units);
-  document.getElementById("sGross").textContent="$"+fMoney(s.gross);
-  document.getElementById("sDisc").textContent="$"+fMoney(s.disc);
-  document.getElementById("sTips").textContent="$"+fMoney(s.tips);
-
-  renderRows();
+const curVal=n=>`<span class="cur">$</span>${fMoney(n)}`;
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+function prettyRange(w){
+  const f=new Date(w.from+"T00:00:00"), t=new Date(w.to+"T00:00:00");
+  const o={month:"short",day:"numeric"}, wd={weekday:"short"};
+  if(w.from===w.to) return t.toLocaleDateString("en-CA",{weekday:"short",month:"short",day:"numeric"});
+  return `${f.toLocaleDateString("en-CA",wd)} ${f.toLocaleDateString("en-CA",o)} – ${t.toLocaleDateString("en-CA",o)}`;
 }
 
-function renderRows(){
-  if(!MODEL) return;
-  const s=MODEL.store;
-  const key=state.sort;
-  const asc = key==="disc"; // lower discount is "better" → leader = lowest
-  const people=[...MODEL.people].sort((a,b)=> asc ? a.discPct-b.discPct : (b[mapKey(key)]-a[mapKey(key)]));
-  const maxAtv=Math.max(...people.map(p=>p.atv),1);
+/* ---------- render ---------- */
+function render(){
+  const W=windows();
+  document.getElementById("storeName").textContent=CONFIG.STORE_LABEL;
+  document.getElementById("rngToday").textContent=prettyRange(W.today);
+  document.getElementById("rngWeek").textContent=prettyRange(W.week);
+
+  const w = state.win==="today" ? W.today : W.week;
+  const {store,people}=compute(RECORDS,w);
+
+  document.getElementById("heroLabel").textContent = state.win==="today" ? "Store · today" : "Store · this week";
+  document.getElementById("heroMeta").textContent = prettyRange(w);
+  document.getElementById("vGross").innerHTML = curVal(store.gross);
+  document.getElementById("vAtv").innerHTML = curVal(store.atv);
+  document.getElementById("vUpt").textContent = store.upt.toFixed(2);
+  document.getElementById("sTx").textContent = fInt(store.tx);
+  document.getElementById("sUnits").textContent = fInt(store.units);
+  document.getElementById("sStaff").textContent = fInt(store.staff);
+
+  renderRows(store, people);
+}
+
+const sortKey={gross:"gross",atv:"atv",upt:"upt",tx:"tx"};
+function renderRows(store, people){
   const el=document.getElementById("rows");
+  if(!people.length){ el.innerHTML=`<div class="empty">No transactions in this window yet.</div>`; return; }
+  const k=sortKey[state.sort];
+  const sorted=[...people].sort((a,b)=>b[k]-a[k]);
+  const maxGross=Math.max(...sorted.map(p=>p.gross),1);
   el.innerHTML="";
-  people.forEach((p,i)=>{
+  sorted.forEach((p,i)=>{
     const lead=i===0;
+    const share = store.gross ? p.gross/store.gross*100 : 0;
     const row=document.createElement("div");
     row.className="row"+(lead?" lead":"");
     row.innerHTML=`
       <div class="rank">${i+1}</div>
       <div class="who">
         <span class="nm">${esc(p.name)}</span>
-        ${lead?`<span class="crown">${asc?"Lowest disc":"Top"}</span>`:""}
-        <span class="eid">#${esc(p.eid)}</span>
+        ${lead?`<span class="crown">Top ${state.sort}</span>`:""}
+        <span class="sh">${share.toFixed(0)}% of gross</span>
       </div>
       <div class="metrics">
-        ${metric("ATV", curVal(p.atv), p.atv-s.atv, "$", false)}
-        ${metric("UPT", numVal(p.upt), p.upt-s.upt, "", false)}
-        ${metric("DISC %", pctVal(p.discPct), p.discPct-s.discPct, "%", true, p.discPct>state.target)}
+        ${metric("Gross", curVal(p.gross), null)}
+        ${metric("ATV", curVal(p.atv), p.atv-store.atv, "$")}
+        ${metric("UPT", p.upt.toFixed(2), p.upt-store.upt, "")}
       </div>
-      <div class="bar"><i style="width:${Math.max(4,p.atv/maxAtv*100)}%"></i></div>
-      <div class="foot-line">
-        <span>orders</span> ${fInt(p.orders)} &nbsp;·&nbsp; <span>units</span> ${fInt(p.units)} &nbsp;·&nbsp; <span>gross</span> $${fMoney(p.gross)} &nbsp;·&nbsp; <span>tips</span> $${fMoney(p.tips)}
-      </div>`;
+      <div class="bar"><i style="width:${Math.max(4,p.gross/maxGross*100)}%"></i></div>
+      <div class="foot-line"><span>tx</span> ${fInt(p.tx)} &nbsp;·&nbsp; <span>units</span> ${fInt(p.units)}</div>`;
     el.appendChild(row);
   });
 }
-
-function metric(label,valHtml,delta,unit,isDisc,over){
-  let d="", cls="flat", sign="";
-  const eps=unit==="%"?0.005:0.005;
-  if(Math.abs(delta)>eps){
-    // for discount, below store avg is good (green)
-    const good = isDisc ? delta<0 : delta>0;
-    cls=good?"up":"down"; sign=delta>0?"+":"−";
+function metric(label, valHtml, delta, unit){
+  let chip="";
+  if(delta!==null){
+    const eps=0.005, good=delta>0;
+    const cls=Math.abs(delta)<eps?"flat":(good?"up":"down");
+    const sign=delta>0?"+":"−", dv=Math.abs(delta);
+    const txt = cls==="flat" ? "—" : (unit==="$"?`${sign}$${fMoney(dv)}`:`${sign}${dv.toFixed(2)}`);
+    chip=`<span class="delta ${cls}">${txt}</span>`;
   }
-  const dv=Math.abs(delta);
-  const dtxt = unit==="$" ? `${sign}$${fMoney(dv)}` : unit==="%" ? `${sign}${dv.toFixed(2)}` : `${sign}${dv.toFixed(2)}`;
-  return `<div class="metric ${isDisc?'disc':''} ${over?'over':''}">
-      <div class="m-l">${label}</div>
-      <div class="m-row"><span class="m-v">${valHtml}</span><span class="delta ${cls}">${cls==='flat'?'—':dtxt}</span></div>
-    </div>`;
+  return `<div class="metric"><div class="m-l">${label}</div><div class="m-row"><span class="m-v">${valHtml}</span>${chip}</div></div>`;
 }
 
-const mapKey=k=>({atv:"atv",upt:"upt",disc:"discPct",orders:"orders"}[k]);
-const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
-
-/* ---------- manual upload (primary path) ---------- */
-function genDate(str){ const t=Date.parse(str); return isFinite(t)?t:0; }
-
-function markLoaded(){
+/* ---------- data loading ---------- */
+function setData(parsed, status){
+  RECORDS = parsed.records;
+  setStatus(status);
   const now=new Date().toLocaleTimeString("en-CA",{hour:"numeric",minute:"2-digit"});
-  document.getElementById("loadedAt").innerHTML=`loaded <b>${now}</b>`;
+  const gen = parsed.generated ? `report ${parsed.generated} · ` : "";
+  document.getElementById("freshLine").innerHTML = `${gen}read <b>${now}</b>`;
+  render();
 }
-
-async function handleFiles(fileList){
-  const files=[...fileList].filter(f=>/\.csv$/i.test(f.name)||f.type.includes("csv"));
-  const err=document.getElementById("fileErr"); err.classList.remove("show");
-  if(!files.length){ err.textContent="That wasn't a .csv export — try the file Techpos downloads."; err.classList.add("show"); return; }
-  try{
-    const built=[];
-    for(const f of files){
-      const text=await f.text();
-      const model=buildModel(text);
-      built.push({model, when:genDate(model.generated)});
-    }
-    built.sort((a,b)=>b.when-a.when);          // newest Report Generated first
-    render(built[0].model);
-    setStatus("upload"); markLoaded();
-    // reflect in the source panel
-    state.mode="upload"; clearTimers();
-    document.querySelectorAll(".modes button").forEach(x=>x.setAttribute("aria-pressed",x.dataset.mode==="upload"?"true":"false"));
-    document.querySelectorAll(".panel").forEach(p=>p.classList.toggle("show",p.dataset.panel==="upload"));
-  }catch(ex){
-    err.textContent="Couldn't read that export: "+ex.message; err.classList.add("show");
-  }
-}
-
-/* ---------- loading & refresh ---------- */
-async function loadFromUrl(url, silent){
-  const err=document.getElementById("urlErr");
-  err.classList.remove("show");
-  try{
-    const res=await fetch(url,{cache:"no-store"});
-    if(!res.ok) throw new Error("HTTP "+res.status+" — check the link is published/public.");
-    const text=await res.text();
-    render(buildModel(text));
-    setStatus("live");
-    scheduleNext();
-  }catch(e){
-    if(!silent){ err.textContent="Couldn't load: "+e.message; err.classList.add("show"); }
-    setStatus("error");
-  }
-}
-
 function setStatus(kind){
   const pill=document.getElementById("statusPill"), txt=document.getElementById("statusText");
   pill.classList.toggle("live", kind==="live");
-  txt.textContent = kind==="live" ? "Live" : kind==="error" ? "Link error" : kind==="upload" ? "Uploaded" : "Snapshot";
+  txt.textContent = kind==="live"?"Live":kind==="upload"?"Uploaded":kind==="error"?"Link error":"Snapshot";
 }
 
-function clearTimers(){ if(timer)clearInterval(timer); if(countdown)clearInterval(countdown); timer=countdown=null; document.getElementById("nextRefresh").textContent=""; }
+async function loadFromUrl(url, silent){
+  const err=document.getElementById("urlErr"); err.classList.remove("show");
+  try{
+    const res=await fetch(url,{cache:"no-store"});
+    if(!res.ok) throw new Error("HTTP "+res.status+" — check the web app is deployed to 'Anyone'.");
+    const text=await res.text();
+    setData(parseFeed(text), "live");
+    scheduleNext();
+  }catch(e){
+    setStatus("error");
+    if(!silent){ err.textContent="Couldn't load: "+e.message; err.classList.add("show"); }
+  }
+}
+/* Accepts the Apps Script JSON endpoint (preferred) or a published-CSV link. */
+function parseFeed(text){
+  const t=text.trimStart();
+  if(t[0]==="{"||t[0]==="["){
+    const j=JSON.parse(text);
+    if(j && j.error) throw new Error(j.error);
+    const raw=Array.isArray(j)?j:(j.records||[]);
+    const records=raw.map(r=>({
+      order:String(r.order ?? r.OrderNumber ?? ""),
+      emp:String(r.emp ?? r.Employee ?? "—").trim()||"—",
+      date:String(r.date ?? r.CreatedDate ?? "").slice(0,10),
+      units:num(r.units ?? r.SoldProducts),
+      gross:num(r.gross ?? r.SubTotal)
+    })).filter(r=>/^\d{4}-\d{2}-\d{2}$/.test(r.date));
+    if(!records.length) throw new Error("The API returned no usable rows.");
+    return { generated:(j && j.generated)||"", records };
+  }
+  return parseOrders(text);   // fallback: raw CSV
+}
+async function handleFiles(list){
+  const files=[...list].filter(f=>/\.csv$/i.test(f.name)||f.type.includes("csv"));
+  const err=document.getElementById("fileErr"); err.classList.remove("show");
+  if(!files.length){ err.textContent="That wasn't a .csv export."; err.classList.add("show"); return; }
+  try{
+    // merge all dropped files, dedupe across them by order number
+    const seen=new Set(); const merged=[]; let gen="";
+    for(const f of files){
+      const p=parseOrders(await f.text()); gen=p.generated||gen;
+      for(const r of p.records){ if(seen.has(r.order)) continue; seen.add(r.order); merged.push(r); }
+    }
+    setData({records:merged, generated:gen}, "upload");
+    clearTimers();
+  }catch(ex){ err.textContent="Couldn't read that export: "+ex.message; err.classList.add("show"); }
+}
 
+/* ---------- auto-refresh ---------- */
+function clearTimers(){ if(timer)clearInterval(timer); if(countdown)clearInterval(countdown); timer=countdown=null; document.getElementById("nextRefresh").textContent=""; }
 function scheduleNext(){
   clearTimers();
-  if(state.mode!=="url" || !state.url) return;
+  if(!state.url) return;
   const ms=state.intervalMin*60000;
   timer=setInterval(()=>loadFromUrl(state.url,true), ms);
   nextAt=Date.now()+ms;
-  const tick=()=>{
-    const left=Math.max(0,nextAt-Date.now());
-    const m=Math.floor(left/60000), sec=Math.floor(left%60000/1000);
-    document.getElementById("nextRefresh").textContent=`next refresh in ${m}:${String(sec).padStart(2,"0")}`;
-  };
+  const tick=()=>{ const left=Math.max(0,nextAt-Date.now()); const m=Math.floor(left/60000), s=Math.floor(left%60000/1000);
+    document.getElementById("nextRefresh").textContent=`next refresh in ${m}:${String(s).padStart(2,"0")}`; };
   tick(); countdown=setInterval(tick,1000);
 }
 
 /* ---------- UI wiring ---------- */
+document.querySelectorAll(".toggle button").forEach(b=>b.addEventListener("click",()=>{
+  document.querySelectorAll(".toggle button").forEach(x=>x.setAttribute("aria-pressed","false"));
+  b.setAttribute("aria-pressed","true"); state.win=b.dataset.win; render();
+}));
 document.querySelectorAll(".sort button").forEach(b=>b.addEventListener("click",()=>{
   document.querySelectorAll(".sort button").forEach(x=>x.setAttribute("aria-pressed","false"));
-  b.setAttribute("aria-pressed","true"); state.sort=b.dataset.sort; renderRows();
+  b.setAttribute("aria-pressed","true"); state.sort=b.dataset.sort; render();
 }));
-
 document.querySelectorAll(".modes button").forEach(b=>b.addEventListener("click",()=>{
   document.querySelectorAll(".modes button").forEach(x=>x.setAttribute("aria-pressed","false"));
-  b.setAttribute("aria-pressed","true"); state.mode=b.dataset.mode;
-  document.querySelectorAll(".panel").forEach(p=>p.classList.toggle("show",p.dataset.panel===state.mode));
-  if(state.mode==="embedded"){ clearTimers(); render(buildModel(EMBEDDED_CSV)); setStatus("snapshot"); }
-  if(state.mode==="url" && state.url){ scheduleNext(); setStatus("live"); }
-  if(state.mode==="upload"){ clearTimers(); }
+  b.setAttribute("aria-pressed","true");
+  document.querySelectorAll(".panel").forEach(p=>p.classList.toggle("show",p.dataset.panel===b.dataset.mode));
 }));
-
 document.getElementById("urlLoad").addEventListener("click",()=>{
-  const u=document.getElementById("urlInput").value.trim();
-  if(!u) return;
-  state.url=u; state.mode="url"; loadFromUrl(u,false);
+  const u=document.getElementById("urlInput").value.trim(); if(!u) return;
+  state.url=u; loadFromUrl(u,false);
 });
-
+document.getElementById("interval").addEventListener("change",e=>{ state.intervalMin=parseInt(e.target.value,10); if(state.url) scheduleNext(); });
+document.getElementById("refreshNow").addEventListener("click",()=>{ if(state.url) loadFromUrl(state.url,false); });
 document.getElementById("updateBtn").addEventListener("click",()=>document.getElementById("globalFile").click());
 document.getElementById("globalFile").addEventListener("change",e=>{ handleFiles(e.target.files); e.target.value=""; });
 document.getElementById("fileInput").addEventListener("change",e=>{ handleFiles(e.target.files); e.target.value=""; });
 
-/* drag-and-drop anywhere */
-const dz=document.getElementById("dropZone"); let dragDepth=0;
+let dragDepth=0; const dz=document.getElementById("dropZone");
 window.addEventListener("dragenter",e=>{ if(e.dataTransfer&&[...e.dataTransfer.types].includes("Files")){ e.preventDefault(); dragDepth++; dz.classList.add("show"); }});
 window.addEventListener("dragover",e=>{ if(e.dataTransfer&&[...e.dataTransfer.types].includes("Files")) e.preventDefault(); });
-window.addEventListener("dragleave",e=>{ if(--dragDepth<=0){ dragDepth=0; dz.classList.remove("show"); }});
-window.addEventListener("drop",e=>{ e.preventDefault(); dragDepth=0; dz.classList.remove("show"); if(e.dataTransfer&&e.dataTransfer.files.length){ document.querySelector('.source').open=true; handleFiles(e.dataTransfer.files); }});
-
-document.getElementById("interval").addEventListener("change",e=>{ state.intervalMin=parseInt(e.target.value,10); if(state.mode==="url"&&state.url) scheduleNext(); });
-document.getElementById("target").addEventListener("input",e=>{ state.target=parseFloat(e.target.value)||0; render(MODEL); });
-document.getElementById("refreshNow").addEventListener("click",()=>{
-  if(state.mode==="url"&&state.url) loadFromUrl(state.url,false);
-  else if(state.mode==="embedded") render(buildModel(EMBEDDED_CSV));
-});
+window.addEventListener("dragleave",()=>{ if(--dragDepth<=0){ dragDepth=0; dz.classList.remove("show"); }});
+window.addEventListener("drop",e=>{ e.preventDefault(); dragDepth=0; dz.classList.remove("show"); if(e.dataTransfer&&e.dataTransfer.files.length) handleFiles(e.dataTransfer.files); });
 
 /* ---------- boot ---------- */
 (function init(){
   document.getElementById("interval").value=String(state.intervalMin);
-  document.getElementById("target").value=String(state.target);
-  if(CONFIG.DEFAULT_SOURCE_URL){
-    state.mode="url"; state.url=CONFIG.DEFAULT_SOURCE_URL;
-    document.querySelectorAll(".modes button").forEach(x=>x.setAttribute("aria-pressed",x.dataset.mode==="url"?"true":"false"));
-    document.querySelectorAll(".panel").forEach(p=>p.classList.toggle("show",p.dataset.panel==="url"));
-    document.getElementById("urlInput").value=CONFIG.DEFAULT_SOURCE_URL;
-    render(buildModel(EMBEDDED_CSV));   // show snapshot instantly, then go live
-    loadFromUrl(CONFIG.DEFAULT_SOURCE_URL,true);
-  } else {
-    render(buildModel(EMBEDDED_CSV));
-    setStatus("snapshot");
-  }
+  try{ setData(parseOrders(document.getElementById("seed").textContent), "snapshot"); }
+  catch(e){ console.error(e); }
+  if(CONFIG.API_URL){ state.url=CONFIG.API_URL; document.getElementById("urlInput").value=CONFIG.API_URL; loadFromUrl(CONFIG.API_URL,true); }
 })();
 </script>
