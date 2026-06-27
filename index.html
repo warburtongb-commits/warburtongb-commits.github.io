@@ -53,11 +53,11 @@
   .hero-head{display:flex;align-items:center;justify-content:space-between;padding:13px 18px;border-bottom:1px solid var(--line)}
   .hero-head .label{font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);font-weight:700}
   .hero-head .meta{font-family:var(--mono);font-size:12px;color:var(--faint)}
-  .kpis{display:grid;grid-template-columns:repeat(3,1fr)}
+  .kpis{display:grid;grid-template-columns:repeat(4,1fr)}
   .kpi{padding:22px 18px;border-right:1px solid var(--line)}
   .kpi:last-child{border-right:0}
   .kpi .k-label{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);font-weight:700}
-  .kpi .k-val{font-family:var(--mono);font-weight:680;letter-spacing:-.02em;font-variant-numeric:tabular-nums;margin-top:9px;font-size:clamp(28px,5vw,44px);line-height:1}
+  .kpi .k-val{font-family:var(--mono);font-weight:680;letter-spacing:-.02em;font-variant-numeric:tabular-nums;margin-top:9px;font-size:clamp(26px,4.2vw,40px);line-height:1}
   .kpi .k-sub{font-family:var(--mono);font-size:12px;color:var(--faint);margin-top:8px}
   .kpi .k-val .cur,.kpi .k-val .suf{color:var(--muted);font-size:.5em;font-weight:600;letter-spacing:0}
   .hero-foot{display:flex;flex-wrap:wrap;border-top:1px solid var(--line)}
@@ -84,7 +84,7 @@
   .who .nm{font-size:16px;font-weight:650;letter-spacing:-.01em}
   .who .crown{font-size:11px;color:var(--gold);font-weight:700;letter-spacing:.08em;text-transform:uppercase}
   .who .sh{font-family:var(--mono);font-size:11px;color:var(--faint)}
-  .metrics{grid-column:2;display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:12px}
+  .metrics{grid-column:2;display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:14px;margin-top:12px}
   .metric .m-l{font-size:10.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--faint);font-weight:700}
   .metric .m-row{display:flex;align-items:baseline;gap:8px;margin-top:3px}
   .metric .m-v{font-family:var(--mono);font-size:20px;font-weight:650;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
@@ -133,6 +133,11 @@
   #dropZone .big{font-size:20px;font-weight:680}
   #dropZone .small{font-size:13px;color:var(--muted);margin-top:8px;font-family:var(--mono)}
 
+  @media (max-width:760px) and (min-width:561px){
+    .kpis{grid-template-columns:repeat(2,1fr)}
+    .kpi:nth-child(2){border-right:0}
+    .kpi:nth-child(1),.kpi:nth-child(2){border-bottom:1px solid var(--line)}
+  }
   @media (max-width:560px){
     .kpis{grid-template-columns:1fr}
     .kpi{border-right:0;border-bottom:1px solid var(--line)}
@@ -173,10 +178,12 @@
       <div class="kpi"><div class="k-label">Gross sales</div><div class="k-val" id="vGross">—</div><div class="k-sub">total before tax</div></div>
       <div class="kpi"><div class="k-label">ATV</div><div class="k-val" id="vAtv">—</div><div class="k-sub">avg transaction value</div></div>
       <div class="kpi"><div class="k-label">UPT</div><div class="k-val" id="vUpt">—</div><div class="k-sub">units per transaction</div></div>
+      <div class="kpi"><div class="k-label">Retention</div><div class="k-val" id="vRet">—</div><div class="k-sub">member capture rate</div></div>
     </div>
     <div class="hero-foot">
       <div class="stat"><div class="s-l">Transactions</div><div class="s-v" id="sTx">—</div></div>
       <div class="stat"><div class="s-l">Units sold</div><div class="s-v" id="sUnits">—</div></div>
+      <div class="stat"><div class="s-l">Members</div><div class="s-v" id="sMembers">—</div></div>
       <div class="stat"><div class="s-l">Budtenders</div><div class="s-v" id="sStaff">—</div></div>
     </div>
   </section>
@@ -188,6 +195,7 @@
       <button data-sort="atv" aria-pressed="false">ATV</button>
       <button data-sort="upt" aria-pressed="false">UPT</button>
       <button data-sort="tx" aria-pressed="false">Tx</button>
+      <button data-sort="ret" aria-pressed="false">Retain</button>
     </div>
   </div>
   <div class="rows" id="rows"></div>
@@ -981,7 +989,7 @@ Kirtigan Sivalingam,150405,2026-06-21 09:04:07,4421190,0,1,0,0,0, ,,,43.95,0.00,
    ============================================================ */
 const CONFIG = {
   STORE_LABEL: "Imagine Cannabis #206",   // shown in the header
-  API_URL: "https://script.google.com/macros/s/AKfycbzOB-0a6RHo3yrCqTUL8rYOII9H4FWZnVWAhA_ihTUOHGSpNLmS6lrCPQDknNyDyBj99A/exec",                             // paste your Apps Script /exec URL here to auto-connect on open
+  API_URL: "https://script.google.com/macros/s/AKfycbzhyJrnVbnJ8CZPmkpJoctsvCZEDrKaw0Kx1Rmmxdo_MVLmAMrYd3i3K__X7Kp27-wLAw/exec",                             // paste your Apps Script /exec URL here to auto-connect on open
   REFRESH_MINUTES: 10
 };
 
@@ -1017,7 +1025,7 @@ function parseOrders(text){
   const head=rows[h].map(x=>x.trim().toLowerCase());
   const col=n=>head.indexOf(n.toLowerCase());
   const cEmp=col("Employee"), cDate=col("CreatedDate"), cOrder=col("OrderNumber"),
-        cUnits=col("SoldProducts"), cGross=col("SubTotal"), cStatus=col("Status");
+        cUnits=col("SoldProducts"), cGross=col("SubTotal"), cStatus=col("Status"), cPid=col("PatientId");
   if(cEmp<0||cDate<0||cOrder<0||cUnits<0||cGross<0) throw new Error("Missing a required column (Employee, CreatedDate, OrderNumber, SoldProducts, SubTotal).");
   const seen=new Set(), out=[];
   let generated="";
@@ -1029,7 +1037,7 @@ function parseOrders(text){
     const emp=(r[cEmp]||"").trim()||"—";
     const date=(r[cDate]||"").trim().slice(0,10);   // YYYY-MM-DD
     if(!/^\d{4}-\d{2}-\d{2}$/.test(date)) continue;
-    out.push({ order:ord, emp, date, units:num(r[cUnits]), gross:num(r[cGross]) });
+    out.push({ order:ord, emp, date, units:num(r[cUnits]), gross:num(r[cGross]), member: cPid>=0 && num(r[cPid])>0 });
   }
   if(!out.length) throw new Error("No completed transactions found in this file.");
   return { records:out, generated };
@@ -1049,14 +1057,14 @@ function windows(){
 function compute(records, w){
   const inWin=records.filter(r=>r.date>=w.from && r.date<=w.to);
   const byEmp=new Map();
-  let tx=0, gross=0, units=0;
+  let tx=0, gross=0, units=0, members=0;
   for(const r of inWin){
-    tx++; gross+=r.gross; units+=r.units;
-    const e=byEmp.get(r.emp)||{name:r.emp,tx:0,gross:0,units:0};
-    e.tx++; e.gross+=r.gross; e.units+=r.units; byEmp.set(r.emp,e);
+    tx++; gross+=r.gross; units+=r.units; if(r.member) members++;
+    const e=byEmp.get(r.emp)||{name:r.emp,tx:0,gross:0,units:0,members:0};
+    e.tx++; e.gross+=r.gross; e.units+=r.units; if(r.member) e.members++; byEmp.set(r.emp,e);
   }
-  const people=[...byEmp.values()].map(e=>({...e, atv:e.tx?e.gross/e.tx:0, upt:e.tx?e.units/e.tx:0}));
-  const store={ tx, gross, units, atv:tx?gross/tx:0, upt:tx?units/tx:0, staff:people.length };
+  const people=[...byEmp.values()].map(e=>({...e, atv:e.tx?e.gross/e.tx:0, upt:e.tx?e.units/e.tx:0, ret:e.tx?e.members/e.tx*100:0}));
+  const store={ tx, gross, units, members, atv:tx?gross/tx:0, upt:tx?units/tx:0, ret:tx?members/tx*100:0, staff:people.length };
   return { store, people };
 }
 
@@ -1087,14 +1095,16 @@ function render(){
   document.getElementById("vGross").innerHTML = curVal(store.gross);
   document.getElementById("vAtv").innerHTML = curVal(store.atv);
   document.getElementById("vUpt").textContent = store.upt.toFixed(2);
+  document.getElementById("vRet").innerHTML = store.tx ? `${store.ret.toFixed(1)}<span class="suf">%</span>` : "—";
   document.getElementById("sTx").textContent = fInt(store.tx);
   document.getElementById("sUnits").textContent = fInt(store.units);
+  document.getElementById("sMembers").textContent = fInt(store.members);
   document.getElementById("sStaff").textContent = fInt(store.staff);
 
   renderRows(store, people);
 }
 
-const sortKey={gross:"gross",atv:"atv",upt:"upt",tx:"tx"};
+const sortKey={gross:"gross",atv:"atv",upt:"upt",tx:"tx",ret:"ret"};
 function renderRows(store, people){
   const el=document.getElementById("rows");
   if(!people.length){ el.innerHTML=`<div class="empty">No transactions in this window yet.</div>`; return; }
@@ -1118,9 +1128,10 @@ function renderRows(store, people){
         ${metric("Gross", curVal(p.gross), null)}
         ${metric("ATV", curVal(p.atv), p.atv-store.atv, "$")}
         ${metric("UPT", p.upt.toFixed(2), p.upt-store.upt, "")}
+        ${metric("Retention", `${p.ret.toFixed(1)}<span class="suf">%</span>`, p.ret-store.ret, "%")}
       </div>
       <div class="bar"><i style="width:${Math.max(4,p.gross/maxGross*100)}%"></i></div>
-      <div class="foot-line"><span>tx</span> ${fInt(p.tx)} &nbsp;·&nbsp; <span>units</span> ${fInt(p.units)}</div>`;
+      <div class="foot-line"><span>tx</span> ${fInt(p.tx)} &nbsp;·&nbsp; <span>members</span> ${fInt(p.members)} &nbsp;·&nbsp; <span>units</span> ${fInt(p.units)}</div>`;
     el.appendChild(row);
   });
 }
@@ -1130,7 +1141,7 @@ function metric(label, valHtml, delta, unit){
     const eps=0.005, good=delta>0;
     const cls=Math.abs(delta)<eps?"flat":(good?"up":"down");
     const sign=delta>0?"+":"−", dv=Math.abs(delta);
-    const txt = cls==="flat" ? "—" : (unit==="$"?`${sign}$${fMoney(dv)}`:`${sign}${dv.toFixed(2)}`);
+    const txt = cls==="flat" ? "—" : (unit==="$"?`${sign}$${fMoney(dv)}`:unit==="%"?`${sign}${dv.toFixed(1)}pp`:`${sign}${dv.toFixed(2)}`);
     chip=`<span class="delta ${cls}">${txt}</span>`;
   }
   return `<div class="metric"><div class="m-l">${label}</div><div class="m-row"><span class="m-v">${valHtml}</span>${chip}</div></div>`;
@@ -1176,7 +1187,8 @@ function parseFeed(text){
       emp:String(r.emp ?? r.Employee ?? "—").trim()||"—",
       date:String(r.date ?? r.CreatedDate ?? "").slice(0,10),
       units:num(r.units ?? r.SoldProducts),
-      gross:num(r.gross ?? r.SubTotal)
+      gross:num(r.gross ?? r.SubTotal),
+      member: (r.member!==undefined ? !!r.member : num(r.patientId ?? r.PatientId)>0)
     })).filter(r=>/^\d{4}-\d{2}-\d{2}$/.test(r.date));
     if(!records.length) throw new Error("The API returned no usable rows.");
     return { generated:(j && j.generated)||"", records };
