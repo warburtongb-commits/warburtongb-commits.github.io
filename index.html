@@ -4,12 +4,20 @@
 <title>BLUNT — Store KPIs</title>
 <style>
   :root{
-    --ink:#15171C; --ink-2:#1B1E24; --surface:#202430; --surface-2:#262B38;
-    --line:#2E3340; --line-2:#3A4150;
-    --text:#F1EFE8; --muted:#8B92A0; --faint:#5C6371;
-    --green:#3DD68C; --green-dim:#1F6B47; --green-glow:rgba(61,214,140,.16);
-    --gold:#E0B450; --gold-dim:#5A4A22;
-    --alert:#E5705A;
+    /* surfaces & text */
+    --ink:#F4F2ED; --ink-2:#ECE9E1; --surface:#FCFBF9; --surface-2:#F0EDE6;
+    --line:#E6E2D9; --line-2:#DAD5C9;
+    --text:#3A3A38; --muted:#8A877F; --faint:#A8A49B;
+    /* semantic pastels: fill (soft bg) + accent (deeper) */
+    --blue:#8AA0C0; --blue-fill:#DCE4EE; --blue-ink:#4F6385;
+    --sage:#7BA67E; --sage-fill:#DCE8DA; --sage-ink:#4C6B4F;
+    --amber:#D6A867; --amber-fill:#F5E6CF; --amber-ink:#8F6A33;
+    --rose:#C28B8B; --rose-fill:#F0DCDC; --rose-ink:#8B5757;
+    --violet:#A795C0; --violet-fill:#E6E0EE; --violet-ink:#6A5A85;
+    /* role aliases kept so existing component rules recolor cleanly */
+    --green:var(--blue); --green-dim:var(--blue-ink); --green-glow:var(--blue-fill);
+    --gold:var(--amber-ink); --gold-dim:var(--amber-fill);
+    --alert:var(--rose-ink);
     --mono:ui-monospace,"SF Mono","Cascadia Code","JetBrains Mono",Menlo,Consolas,monospace;
     --sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
     --r:14px;
@@ -17,7 +25,7 @@
   *{box-sizing:border-box}
   html,body{margin:0}
   body{
-    background:radial-gradient(1200px 600px at 80% -10%, rgba(61,214,140,.05), transparent 60%), var(--ink);
+    background:radial-gradient(1200px 600px at 80% -10%, rgba(138,160,192,.12), transparent 60%), var(--ink);
     color:var(--text); font-family:var(--sans); -webkit-font-smoothing:antialiased; line-height:1.45;
     padding:22px clamp(14px,4vw,40px) 48px;
   }
@@ -31,13 +39,13 @@
   .brand .sub b{color:var(--text);font-weight:600}
   .status{display:flex;flex-direction:column;align-items:flex-end;gap:7px;text-align:right}
   .pill{display:inline-flex;align-items:center;gap:8px;font-family:var(--mono);font-size:12px;padding:6px 11px;border:1px solid var(--line);border-radius:999px;background:var(--ink-2);color:var(--muted)}
-  .pill.live{color:var(--green);border-color:var(--green-dim);background:var(--green-glow)}
+  .pill.live{color:var(--sage-ink);border-color:var(--sage);background:var(--sage-fill)}
   .dot{width:7px;height:7px;border-radius:50%;background:currentColor}
   .pill.live .dot{animation:pulse 2.4s ease-out infinite}
-  @keyframes pulse{0%{box-shadow:0 0 0 0 var(--green-glow)}70%{box-shadow:0 0 0 7px transparent}100%{box-shadow:0 0 0 0 transparent}}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 var(--sage-fill)}70%{box-shadow:0 0 0 7px transparent}100%{box-shadow:0 0 0 0 transparent}}
   .gen{font-size:12px;color:var(--faint);font-family:var(--mono)}
   .gen b{color:var(--muted);font-weight:500}
-  .update-btn{font:inherit;font-size:13px;font-weight:650;color:var(--ink);background:var(--green);border:0;border-radius:9px;padding:9px 15px;cursor:pointer;display:inline-flex;align-items:center;gap:7px}
+  .update-btn{font:inherit;font-size:13px;font-weight:650;color:#fff;background:var(--blue-ink);border:0;border-radius:9px;padding:9px 15px;cursor:pointer;display:inline-flex;align-items:center;gap:7px}
   .update-btn:hover{filter:brightness(1.07)}
   .update-btn:focus-visible{outline:2px solid var(--text);outline-offset:2px}
 
@@ -77,7 +85,7 @@
   .empty{border:1px dashed var(--line-2);border-radius:var(--r);padding:30px;text-align:center;color:var(--muted);font-family:var(--mono);font-size:13px}
   .row{border:1px solid var(--line);border-radius:var(--r);background:var(--surface);padding:15px 18px;display:grid;grid-template-columns:34px 1fr;gap:0 16px;align-items:center;transition:border-color .15s}
   .row:hover{border-color:var(--line-2)}
-  .row.lead{border-color:var(--gold-dim);background:linear-gradient(180deg,rgba(224,180,80,.06),var(--surface))}
+  .row.lead{border-color:var(--amber);background:linear-gradient(180deg,var(--amber-fill),var(--surface))}
   .rank{font-family:var(--mono);font-size:20px;font-weight:680;color:var(--faint);text-align:center;font-variant-numeric:tabular-nums}
   .row.lead .rank{color:var(--gold)}
   .who{grid-column:2;display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
@@ -90,12 +98,12 @@
   .metric .m-v{font-family:var(--mono);font-size:20px;font-weight:650;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
   .metric .m-v .cur,.metric .m-v .suf{color:var(--muted);font-size:.62em}
   .delta{font-family:var(--mono);font-size:11px;font-weight:600;padding:1px 6px;border-radius:6px;white-space:nowrap}
-  .delta.up{color:var(--green);background:var(--green-glow)}
-  .delta.down{color:var(--alert);background:rgba(229,112,90,.12)}
+  .delta.up{color:var(--sage-ink);background:var(--sage-fill)}
+  .delta.down{color:var(--rose-ink);background:var(--rose-fill)}
   .delta.flat{color:var(--faint);background:var(--ink-2)}
   .bar{grid-column:2;height:5px;border-radius:999px;background:var(--ink-2);margin-top:14px;overflow:hidden}
   .bar > i{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,var(--green-dim),var(--green));width:0;transition:width .5s ease}
-  .row.lead .bar > i{background:linear-gradient(90deg,var(--gold-dim),var(--gold))}
+  .row.lead .bar > i{background:linear-gradient(90deg,var(--amber),var(--amber-ink))}
   .foot-line{grid-column:2;font-family:var(--mono);font-size:12px;color:var(--faint);margin-top:11px;font-variant-numeric:tabular-nums}
   .foot-line span{color:var(--muted)}
 
@@ -113,21 +121,21 @@
   .panel p{margin:0 0 12px;line-height:1.55}
   .panel code{font-family:var(--mono);font-size:12px;color:var(--green);background:var(--ink);padding:1px 5px;border-radius:4px}
   .field{display:flex;gap:8px;flex-wrap:wrap}
-  input[type=url]{flex:1 1 260px;font-family:var(--mono);font-size:13px;color:var(--text);background:var(--ink);border:1px solid var(--line-2);border-radius:8px;padding:10px 12px}
+  input[type=url]{flex:1 1 260px;font-family:var(--mono);font-size:13px;color:var(--text);background:var(--surface);border:1px solid var(--line-2);border-radius:8px;padding:10px 12px}
   input[type=url]:focus{outline:2px solid var(--green);outline-offset:1px;border-color:var(--green-dim)}
-  .btn{font:inherit;font-size:13px;font-weight:600;color:var(--ink);background:var(--green);border:0;border-radius:8px;padding:10px 16px;cursor:pointer}
+  .btn{font:inherit;font-size:13px;font-weight:600;color:#fff;background:var(--blue-ink);border:0;border-radius:8px;padding:10px 16px;cursor:pointer}
   .btn:hover{filter:brightness(1.06)}
   .btn.ghost{background:none;color:var(--text);border:1px solid var(--line-2)}
   .controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:16px;padding-top:16px;border-top:1px solid var(--line)}
   .controls label{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:7px}
-  select{font-family:var(--mono);font-size:13px;color:var(--text);background:var(--ink);border:1px solid var(--line-2);border-radius:7px;padding:7px 9px}
+  select{font-family:var(--mono);font-size:13px;color:var(--text);background:var(--surface);border:1px solid var(--line-2);border-radius:7px;padding:7px 9px}
   .controls .spacer{flex:1}
-  .err{display:none;margin-top:12px;font-size:12.5px;color:var(--alert);font-family:var(--mono);background:rgba(229,112,90,.1);border:1px solid var(--alert);border-radius:8px;padding:10px 12px}
+  .err{display:none;margin-top:12px;font-size:12.5px;color:var(--rose-ink);font-family:var(--mono);background:var(--rose-fill);border:1px solid var(--rose);border-radius:8px;padding:10px 12px}
   .err.show{display:block}
   input[type=file]{font-size:13px;color:var(--muted)}
   input[type=file]::file-selector-button{font:inherit;font-weight:600;color:var(--text);background:var(--surface-2);border:1px solid var(--line-2);border-radius:7px;padding:8px 12px;margin-right:10px;cursor:pointer}
 
-  #dropZone{position:fixed;inset:0;z-index:50;display:none;align-items:center;justify-content:center;background:rgba(13,15,19,.86);backdrop-filter:blur(3px)}
+  #dropZone{position:fixed;inset:0;z-index:50;display:none;align-items:center;justify-content:center;background:rgba(244,242,237,.88);backdrop-filter:blur(3px)}
   #dropZone.show{display:flex}
   #dropZone .card{border:2px dashed var(--green);border-radius:18px;padding:46px 60px;text-align:center;background:var(--surface)}
   #dropZone .big{font-size:20px;font-weight:680}
@@ -989,7 +997,7 @@ Kirtigan Sivalingam,150405,2026-06-21 09:04:07,4421190,0,1,0,0,0, ,,,43.95,0.00,
    ============================================================ */
 const CONFIG = {
   STORE_LABEL: "Imagine Cannabis #206",   // shown in the header
-  API_URL: "https://script.google.com/macros/s/AKfycbzhyJrnVbnJ8CZPmkpJoctsvCZEDrKaw0Kx1Rmmxdo_MVLmAMrYd3i3K__X7Kp27-wLAw/exec",                             // paste your Apps Script /exec URL here to auto-connect on open
+  API_URL: "https://script.google.com/macros/s/AKfycbwQ2wwjDydtkEEj6w51nfU2f6FW-HqN5PYQ_3NoDljablDAY2CsymhkfWbBoZWHe9Gliw/exec",                             // paste your Apps Script /exec URL here to auto-connect on open
   REFRESH_MINUTES: 10
 };
 
