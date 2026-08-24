@@ -15,7 +15,7 @@
 body{margin:0;background:var(--bg);color:var(--ink);
   font:15px/1.45 ui-sans-serif,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
   -webkit-font-smoothing:antialiased}
-.wrap{max-width:1080px;margin:0 auto;padding:22px 18px 60px}
+.wrap{max-width:1100px;margin:0 auto;padding:22px 18px 60px}
 .brand{display:flex;flex-direction:column;gap:2px}
 .kicker{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--accent);font-weight:700}
 h1{font-size:24px;margin:2px 0 0;font-weight:700;letter-spacing:-.01em}
@@ -31,15 +31,27 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 .update-btn{font-size:13px;display:inline-flex;align-items:center;gap:7px}
 .ghost{background:transparent;color:var(--mute);font-size:12px;padding:6px 10px}
 
-/* hero + kpis */
-.hero{margin-top:18px;background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:16px 18px}
+/* scope strip: week + one button per day */
+.scope{display:grid;grid-template-columns:minmax(96px,.9fr) repeat(7,1fr);gap:7px;margin-top:18px}
+.sc{background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:9px 10px;
+  text-align:left;display:flex;flex-direction:column;gap:5px;min-width:0}
+.sc[aria-pressed="true"]{border-color:var(--accent);background:#1d2129}
+.sc-d{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--mute);font-weight:700}
+.sc-n{font-size:13px;font-weight:650;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+.sc[aria-pressed="true"] .sc-d{color:var(--accent)}
+.bar{height:3px;border-radius:2px;background:var(--line);overflow:hidden}
+.bar span{display:block;height:100%;background:var(--dim)}
+.sc[aria-pressed="true"] .bar span{background:var(--accent)}
+.sc-week{background:var(--panel2)}
+
+/* hero */
+.hero{margin-top:10px;background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:16px 18px}
 .hero-top{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap}
 .meta{font-size:12px;color:var(--dim)}
 .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-top:14px}
 .kpi{background:var(--panel2);border:1px solid var(--line);border-radius:11px;padding:11px 12px}
 .k-label{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--mute);font-weight:600}
-.k-val{font-size:23px;font-weight:700;margin-top:3px;letter-spacing:-.02em;
-  font-variant-numeric:tabular-nums}
+.k-val{font-size:23px;font-weight:700;margin-top:3px;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
 .k-sub{font-size:11px;color:var(--dim);margin-top:2px}
 
 /* budtenders */
@@ -76,15 +88,19 @@ input{width:100%;font:inherit;background:var(--panel2);color:var(--ink);border:1
 .gate button[type=submit]{width:100%;margin-top:14px;background:var(--accent);border-color:var(--accent);
   color:#171307;font-weight:650;padding:10px}
 .err{color:var(--down);font-size:13px;margin-top:10px;min-height:18px}
-.hint{font-size:12px;color:var(--dim);margin-top:14px}
 .check{display:flex;align-items:center;gap:8px;margin-top:12px;font-size:12px;color:var(--mute)}
 .check input{width:auto}
 details{margin-top:26px;font-size:13px;color:var(--mute)}
 summary{cursor:pointer;color:var(--dim)}
 details .body{background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:14px;margin-top:10px}
 code{background:var(--panel2);padding:1px 5px;border-radius:4px;font-size:12px}
+pre{white-space:pre-wrap;word-break:break-all;font-size:11px;color:var(--mute)}
 .hidden{display:none !important}
+@media (max-width:820px){
+  .scope{grid-template-columns:repeat(4,1fr)}
+}
 @media (max-width:640px){
+  .scope{grid-template-columns:repeat(2,1fr)}
   .row{grid-template-columns:28px 1fr;row-gap:10px}
   .metrics{grid-column:1 / -1}
 }
@@ -113,15 +129,15 @@ code{background:var(--panel2);padding:1px 5px;border-radius:4px;font-size:12px}
   <details>
     <summary>Add a store code</summary>
     <div class="body">
-      <p style="margin-top:0">Type the code you want to hand out, copy the line it produces, and paste it into the <code>STORES</code> list at the top of this file.</p>
+      <p style="margin-top:0">Type the code you want to hand out, then paste the line it produces into the <code>STORES</code> list at the top of this file.</p>
       <label for="genStore">Store label</label>
-      <input id="genStore" placeholder="Imagine Cannabis #206 — White Rock">
-      <label for="genMatch">Text to match in BranchName</label>
-      <input id="genMatch" placeholder="#206">
+      <input id="genStore" placeholder="Imagine Cannabis #206">
+      <label for="genId">Store number</label>
+      <input id="genId" placeholder="206">
       <label for="genCode">Code</label>
-      <input id="genCode" placeholder="whiterock-206">
+      <input id="genCode" placeholder="whiterock206">
       <button type="button" id="genBtn" style="margin-top:12px">Generate line</button>
-      <pre id="genOut" style="white-space:pre-wrap;word-break:break-all;font-size:11px;color:var(--mute)"></pre>
+      <pre id="genOut"></pre>
     </div>
   </details>
 </div>
@@ -136,19 +152,22 @@ code{background:var(--panel2);padding:1px 5px;border-radius:4px;font-size:12px}
     </div>
     <div class="status">
       <button class="update-btn" id="updateBtn"><span id="spin">⟳</span> Update from export</button>
+      <button class="ghost hidden" id="snapBtn">Copy snapshot</button>
       <button class="ghost" id="signOut">Sign out</button>
       <input type="file" id="file" accept=".csv,text/csv" class="hidden">
     </div>
   </div>
 
+  <div class="scope" id="scope"></div>
+
   <div class="hero">
     <div class="hero-top">
-      <h2 id="heroTitle">Store</h2>
+      <h2 id="heroTitle">Week</h2>
       <span class="meta" id="heroMeta">—</span>
     </div>
     <div class="kpis">
       <div class="kpi"><div class="k-label">Net sales</div><div class="k-val" id="vNet">—</div><div class="k-sub">after discounts, before tax</div></div>
-      <div class="kpi"><div class="k-label">Transactions</div><div class="k-val" id="vTx">—</div><div class="k-sub">completed orders</div></div>
+      <div class="kpi"><div class="k-label">Transactions</div><div class="k-val" id="vTx">—</div><div class="k-sub" id="vTxSub">completed orders</div></div>
       <div class="kpi"><div class="k-label">ATV</div><div class="k-val" id="vAtv">—</div><div class="k-sub">net per transaction</div></div>
       <div class="kpi"><div class="k-label">UPT</div><div class="k-val" id="vUpt">—</div><div class="k-sub">units per transaction</div></div>
       <div class="kpi"><div class="k-label">AUP</div><div class="k-val" id="vAup">—</div><div class="k-sub">net per unit</div></div>
@@ -170,27 +189,35 @@ code{background:var(--panel2);padding:1px 5px;border-radius:4px;font-size:12px}
   <div id="rows"></div>
 </div>
 
+<!-- ================= STATIC SNAPSHOT =================
+     One row per store / day / budtender:
+       [storeId, date, employee, net, transactions, units, memberTx]
+     Every KPI is a ratio of these four sums, so this is all the
+     dashboard needs. Replace this block to refresh the snapshot,
+     or set MODE:"live" below to pull the same shape from Sheets.
+-->
+<script type="application/json" id="seed">{"generated":"8/24/2026 1:36:52 AM","range":{"start":"2026-08-16","end":"2026-08-22"},"cells":[["114","2026-08-16","Brooklynn Levy",4406.59,117,181,69],["114","2026-08-16","Jada Brown",2688.91,80,114,40],["114","2026-08-16","Kristina Sutton",4348.14,158,218,79],["114","2026-08-16","Marco Ascon Ramos",2949.75,100,132,39],["114","2026-08-16","Parise Naylor",2897.38,69,107,35],["114","2026-08-16","Stefan Petrovic",37.95,1,1,0],["114","2026-08-17","Deekshita Sharma",2887.25,78,114,35],["114","2026-08-17","Jada Brown",2036.53,66,96,25],["114","2026-08-17","Juanita Lacayo Vanegas",1006.22,27,42,20],["114","2026-08-17","Kijori Harris",2084.82,76,95,33],["114","2026-08-17","Kristina Sutton",126.69,2,7,1],["114","2026-08-17","Marco Ascon Ramos",2494.38,90,115,28],["114","2026-08-17","Stefan Petrovic",3023.53,98,142,48],["114","2026-08-18","Deekshita Sharma",3476.98,71,116,41],["114","2026-08-18","Jada Brown",3712.58,95,144,46],["114","2026-08-18","Juanita Lacayo Vanegas",2241.89,52,79,35],["114","2026-08-18","Kijori Harris",1252.7,49,66,21],["114","2026-08-18","Kristina Sutton",1256.57,32,46,20],["114","2026-08-18","Marco Ascon Ramos",2574.33,77,104,37],["114","2026-08-18","Parise Naylor",3388.5,106,153,52],["114","2026-08-19","Amber Patterson",971.13,30,47,21],["114","2026-08-19","Brooklynn Levy",1841.52,66,91,36],["114","2026-08-19","Jin Vincent",1471.35,61,76,32],["114","2026-08-19","Juanita Lacayo Vanegas",1379.03,32,50,27],["114","2026-08-19","Kijori Harris",807.76,31,48,19],["114","2026-08-19","Kristina Sutton",30.95,1,1,1],["114","2026-08-19","Marco Ascon Ramos",1379.6,43,56,23],["114","2026-08-19","Parise Naylor",2266.17,60,97,31],["114","2026-08-19","Phyllis Dizon",612.94,15,23,9],["114","2026-08-19","Stefan Petrovic",3202.06,93,134,51],["114","2026-08-20","Amber Patterson",3322.35,82,130,39],["114","2026-08-20","Jin Vincent",2888.17,104,133,53],["114","2026-08-20","Kijori Harris",1626.53,56,75,29],["114","2026-08-20","Kristina Sutton",1220.55,36,55,19],["114","2026-08-20","Phyllis Dizon",2226.9,51,85,34],["114","2026-08-20","Stefan Petrovic",3369.36,120,158,60],["114","2026-08-21","Amber Patterson",1256.22,30,45,17],["114","2026-08-21","Brooklynn Levy",3859.74,120,180,54],["114","2026-08-21","Deekshita Sharma",3130.86,90,117,43],["114","2026-08-21","Kijori Harris",1658.24,66,86,37],["114","2026-08-21","Phyllis Dizon",1847.21,49,75,23],["114","2026-08-21","Stefan Petrovic",3574.75,118,157,56],["114","2026-08-21","Vanessa Fehr",3092.74,64,119,41],["114","2026-08-22","Amber Patterson",2248.08,67,100,27],["114","2026-08-22","Deekshita Sharma",3513.26,140,192,58],["114","2026-08-22","Jada Brown",23.52,1,1,1],["114","2026-08-22","Kijori Harris",1417.29,34,52,21],["114","2026-08-22","Marco Ascon Ramos",3370.52,128,178,50],["114","2026-08-22","Marko Petrovic",2429.28,90,124,45],["114","2026-08-22","Phyllis Dizon",2151.53,45,75,32],["202","2026-08-16","Carlos Portillo",52.05,1,3,0],["202","2026-08-16","Elijah Hunter",2851.33,72,103,21],["202","2026-08-16","Jared Nelson",2974.28,69,124,43],["202","2026-08-16","Rosey Amarasinghage",1366.49,35,52,24],["202","2026-08-16","Samantha Cran",4102.46,114,165,57],["202","2026-08-17","Carlos Portillo",2125.59,38,69,30],["202","2026-08-17","Samantha Cran",5824,165,258,71],["202","2026-08-17","Venus Schuss",2663.43,60,95,28],["202","2026-08-18","Carlos Portillo",1009.6,27,32,24],["202","2026-08-18","Elijah Hunter",6844.36,165,253,66],["202","2026-08-18","Rosey Amarasinghage",3161.46,71,122,46],["202","2026-08-19","Carlos Portillo",147.15,4,7,1],["202","2026-08-19","Elijah Hunter",2943.53,76,121,30],["202","2026-08-19","Jared Nelson",369.25,10,15,9],["202","2026-08-19","Rosey Amarasinghage",1443.06,22,50,16],["202","2026-08-19","Samantha Cran",3651.26,95,140,34],["202","2026-08-19","Valentina Arroyo Di Padova",955.41,29,39,17],["202","2026-08-19","Venus Schuss",2003.72,45,76,25],["202","2026-08-20","Elijah Hunter",4275.22,117,174,42],["202","2026-08-20","Jared Nelson",2389.71,62,93,36],["202","2026-08-20","Rosey Amarasinghage",2536,70,103,48],["202","2026-08-20","Valentina Arroyo Di Padova",823.67,24,39,20],["202","2026-08-20","Venus Schuss",1552.88,36,52,20],["202","2026-08-21","Jared Nelson",3444.22,74,132,41],["202","2026-08-21","Rosey Amarasinghage",3556.93,81,140,50],["202","2026-08-21","Samantha Cran",4990.3,138,214,53],["202","2026-08-21","Venus Schuss",1211.58,35,54,22],["202","2026-08-22","Elijah Hunter",3022.82,77,120,33],["202","2026-08-22","Jared Nelson",2520.78,51,94,31],["202","2026-08-22","Samantha Cran",4575.47,119,189,51],["202","2026-08-22","Venus Schuss",2989.55,63,110,36],["206","2026-08-16","Cian Morris-Gracey",2688.45,76,103,35],["206","2026-08-16","Gavin Warburton",912.21,26,39,19],["206","2026-08-16","George Garner",2628.35,84,117,41],["206","2026-08-16","Kirtigan Sivalingam",42.95,1,1,1],["206","2026-08-16","Matt Thompson",2535.12,80,114,39],["206","2026-08-17","Cian Morris-Gracey",953.92,15,40,8],["206","2026-08-17","Drew Koch",2126.61,63,95,42],["206","2026-08-17","George Garner",2726.3,70,109,49],["206","2026-08-17","Hannah Scott",1596.99,36,65,23],["206","2026-08-17","Kirtigan Sivalingam",38.9,1,2,1],["206","2026-08-17","Levi Jones",1631.63,49,76,22],["206","2026-08-18","Cian Morris-Gracey",1284.32,48,60,26],["206","2026-08-18","Hannah Scott",2410.63,57,107,31],["206","2026-08-18","Kirtigan Sivalingam",1475.06,37,60,23],["206","2026-08-18","Levi Jones",2366.98,69,92,37],["206","2026-08-19","Gavin Warburton",2836.99,93,129,65],["206","2026-08-19","Hannah Scott",1844.86,45,71,30],["206","2026-08-19","Kirtigan Sivalingam",2206.24,72,99,43],["206","2026-08-20","Gavin Warburton",1036.45,23,35,14],["206","2026-08-20","George Garner",3272.13,98,140,60],["206","2026-08-20","Levi Jones",2887.52,74,123,42],["206","2026-08-20","Matt Thompson",2471.67,68,105,40],["206","2026-08-21","Drew Koch",2737.7,62,114,34],["206","2026-08-21","Kirtigan Sivalingam",2110.68,50,71,36],["206","2026-08-21","Levi Jones",3508.2,98,150,52],["206","2026-08-21","Matt Thompson",2406.67,67,108,40],["206","2026-08-22","Clarence McNeill",3128.93,73,122,39],["206","2026-08-22","Drew Koch",2574.99,72,99,47],["206","2026-08-22","George Garner",2129.81,59,86,35],["206","2026-08-22","Kirtigan Sivalingam",1989.59,39,68,30],["207","2026-08-16","Aamina Mohammed",2965.15,121,155,51],["207","2026-08-16","Elle Bouliane",1449.46,51,68,29],["207","2026-08-16","Kaylen Khamkhay",6074.64,174,252,88],["207","2026-08-16","Madison Fraser",1059.12,35,47,24],["207","2026-08-16","Priyank Chopra",5553.12,209,275,94],["207","2026-08-17","Aamina Mohammed",3682.56,131,166,76],["207","2026-08-17","Cassie Bopkof",2392.78,98,125,49],["207","2026-08-17","Elle Bouliane",1406.23,40,56,22],["207","2026-08-17","Kaylen Khamkhay",75.94,1,2,1],["207","2026-08-17","Kyla Nerada",866.67,32,45,19],["207","2026-08-17","Priya Sandhu",3018.92,91,138,54],["207","2026-08-17","Tiffany Mafika",3167.6,114,152,41],["207","2026-08-18","Aamina Mohammed",2685.64,97,126,41],["207","2026-08-18","Elle Bouliane",370.15,15,17,7],["207","2026-08-18","Ife Olubitan",4439.83,153,215,82],["207","2026-08-18","Jada Morales",2130.7,70,99,40],["207","2026-08-18","Kaylen Khamkhay",3668.53,114,153,73],["207","2026-08-18","Tiffany Mafika",2367.69,64,93,24],["207","2026-08-19","Belle Jonsson",618.08,17,20,6],["207","2026-08-19","Cassie Bopkof",1936.98,68,96,31],["207","2026-08-19","Elle Bouliane",2560.18,80,109,36],["207","2026-08-19","Ife Olubitan",5230.79,174,217,96],["207","2026-08-19","Kaylen Khamkhay",742.56,28,37,11],["207","2026-08-19","Priya Sandhu",4287.12,147,190,115],["207","2026-08-20","Aamina Mohammed",2146.52,81,119,39],["207","2026-08-20","Belle Jonsson",349.73,12,19,2],["207","2026-08-20","Cassie Bopkof",3270.81,95,139,58],["207","2026-08-20","Elle Bouliane",557.38,26,34,13],["207","2026-08-20","Ife Olubitan",3564.69,122,159,68],["207","2026-08-20","Kyla Nerada",1716.86,42,67,28],["207","2026-08-20","Madison Fraser",2325.86,75,101,41],["207","2026-08-20","Mujtaba Mujtaba",1692.64,63,80,33],["207","2026-08-21","Aamina Mohammed",1519.1,54,77,34],["207","2026-08-21","Belle Jonsson",466.23,16,26,7],["207","2026-08-21","Cassie Bopkof",1479.89,51,72,22],["207","2026-08-21","Ife Olubitan",3211.38,93,132,48],["207","2026-08-21","Kaylen Khamkhay",463.61,24,36,12],["207","2026-08-21","Kyla Nerada",1799.31,49,67,33],["207","2026-08-21","Madison Fraser",1298.2,48,67,26],["207","2026-08-21","Priyank Chopra",5797.96,181,236,85],["207","2026-08-21","Tiffany Mafika",2475.36,68,86,24],["207","2026-08-22","Aamina Mohammed",2565.88,79,106,47],["207","2026-08-22","Belle Jonsson",490.35,14,21,6],["207","2026-08-22","Cassie Bopkof",2894.22,103,147,48],["207","2026-08-22","Ife Olubitan",3314.58,125,161,57],["207","2026-08-22","Madison Fraser",980.49,43,55,19],["207","2026-08-22","Nishtha Patel",3152.78,101,139,56],["207","2026-08-22","Tiffany Mafika",3426.27,142,187,38],["208","2026-08-16","Athena Nguyen-Vanxay",1355.48,40,60,27],["208","2026-08-16","Faith Brown",2443.94,72,108,46],["208","2026-08-16","Finnigan Gariepy",2449.13,77,106,45],["208","2026-08-16","Izzy Mellish",662.04,20,37,16],["208","2026-08-16","Shivani Suhag",2401.2,76,107,46],["208","2026-08-17","Athena Nguyen-Vanxay",1611.16,45,69,29],["208","2026-08-17","Austin Ayeras",33.95,1,1,1],["208","2026-08-17","Derek Williams",1343.56,44,57,24],["208","2026-08-17","Izzy Mellish",899.34,22,33,10],["208","2026-08-17","Samuel Wallace",1904.96,63,90,43],["208","2026-08-17","Shivani Suhag",2706.42,90,119,61],["208","2026-08-18","Austin Ayeras",921.74,31,41,23],["208","2026-08-18","Faith Brown",2018.23,63,103,45],["208","2026-08-18","Izzy Mellish",951.28,24,39,15],["208","2026-08-18","Mason  Wright",790.39,26,36,16],["208","2026-08-18","Samuel Wallace",1852.41,60,78,47],["208","2026-08-18","Shivani Suhag",1682.77,44,67,28],["208","2026-08-19","Derek Williams",2344.16,58,86,44],["208","2026-08-19","Finnigan Gariepy",1932.45,62,80,40],["208","2026-08-19","Jesse King",2146.12,69,93,39],["208","2026-08-19","Mason  Wright",1254.84,39,61,18],["208","2026-08-19","Shivani Suhag",1309.76,35,45,21],["208","2026-08-20","Athena Nguyen-Vanxay",1797.87,61,86,37],["208","2026-08-20","Austin Ayeras",1178.03,28,48,20],["208","2026-08-20","Faith Brown",49.99,1,1,0],["208","2026-08-20","Izzy Mellish",1920.54,60,80,43],["208","2026-08-20","Jesse King",1954.23,62,86,38],["208","2026-08-20","Mason  Wright",1355.76,32,48,23],["208","2026-08-21","Athena Nguyen-Vanxay",2061.51,71,111,53],["208","2026-08-21","Austin Ayeras",1784.2,49,73,34],["208","2026-08-21","Finnigan Gariepy",2222,65,102,34],["208","2026-08-21","Jesse King",2474.87,67,93,48],["208","2026-08-21","Mason  Wright",2718.81,89,120,49],["208","2026-08-22","Austin Ayeras",2476.51,80,114,52],["208","2026-08-22","Derek Williams",2863.79,87,134,50],["208","2026-08-22","Faith Brown",2510.38,55,90,38],["208","2026-08-22","Jesse King",1633.76,38,75,30],["208","2026-08-22","Samuel Wallace",2579.61,67,101,39]]}</script>
+
 <script>
 /* ============================================================
-   CONFIG — the only part you edit per store
+   CONFIG
    ============================================================ */
 const CONFIG = {
-  // Apps Script /exec URL. Leave "" to run from file uploads only.
-  API_URL: "",
+  // "static" reads the snapshot embedded above.
+  // "live"   pulls from API_URL and ignores the snapshot.
+  MODE: "static",
+
+  API_URL: "https://script.google.com/macros/s/AKfycby7uw0egPnTEyFWYdnjfcLky9PqmGrzK4x1TfuVwKjuWdY25ClbHrx33oz9sHTDGrM/exec",              // Apps Script /exec URL, used when MODE is "live"
   REFRESH_MINUTES: 10,
 
-  // One entry per store. `match` is checked against the report's BranchName
-  // column (case-insensitive, partial match). `hash` comes from the
-  // "Add a store code" tool on the sign-in screen.
+  // `id` matches the first column of the snapshot and the store number
+  // in the report's BranchName. `hash` comes from "Add a store code".
   STORES: [
-    {
-      id: "206",
-      label: "Imagine Cannabis #206",
-      sub: "White Rock",
-      match: "#206",
-      // code: whiterock206
-      hash: "a712429165cb31ab8c5204dd4e0f3972fb02f447b3e0ff955f674d9a028aaabf"
-    }
+    { id:"206", label:"Imagine Cannabis #206", sub:"White Rock",     hash:"a712429165cb31ab8c5204dd4e0f3972fb02f447b3e0ff955f674d9a028aaabf" },
+    { id:"202", label:"Imagine Cannabis #202", sub:"Ladner",         hash:"6f58d9242638c6749857530bc51902af16b5c5a88e5d188446fc9f6822bb0f41" },
+    { id:"207", label:"Imagine Cannabis #207", sub:"Newton Village", hash:"438af8d649e1e1611bf48b34240680838c9e50b062e817780dd20f6c042996b4" },
+    { id:"208", label:"Imagine Cannabis #208", sub:"Guildford",      hash:"ddad12e093e92628024ac296fca8fefb4340d8b5f0376c2abf814113ca5e29ec" },
+    { id:"114", label:"Inspired Cannabis #114", sub:"Delta",         hash:"2e5b49c5d2ab5d2cd11cb0603b367bf06149b3df183dd7d12957ed838e5f824c" }
   ]
 };
 
@@ -199,7 +226,7 @@ const CONFIG = {
    ============================================================ */
 function tokenize(text){
   const rows=[]; let row=[], val="", q=false;
-  text=text.replace(/\r\n/g,"\n").replace(/\r/g,"\n");
+  text=String(text).replace(/\r\n/g,"\n").replace(/\r/g,"\n");
   for(let i=0;i<text.length;i++){
     const c=text[i];
     if(q){
@@ -213,158 +240,191 @@ function tokenize(text){
   row.push(val); rows.push(row);
   return rows;
 }
-
 const num = v => { const n=parseFloat(String(v??"").replace(/[$,\s]/g,"")); return isFinite(n)?n:0; };
 
-/* Dates: "8/23/2026 2:58:49 PM" or "2026-08-23 14:58:49" -> "YYYY-MM-DD" */
+/* "8/23/2026 2:58:49 PM" or "2026-08-23 14:58:49" -> "2026-08-23" */
 function toISO(s){
   s=String(s||"").trim();
   let m=s.match(/^(\d{4})-(\d{2})-(\d{2})/);
-  if(m) return `${m[1]}-${m[2]}-${m[3]}`;
+  if(m) return m[0];
   m=s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
   if(m) return `${m[3]}-${String(m[1]).padStart(2,"0")}-${String(m[2]).padStart(2,"0")}`;
   return "";
 }
 
 /* ============================================================
-   PARSE — Product Sales export (one row per line item)
-   Rolls line items up into orders, then into people.
+   PARSE — Product Sales export, line items rolled up to orders,
+   orders rolled up to store/day/budtender cells.
    Net = subtotalincludingdiscount (already gross − discount).
    ============================================================ */
-const REQUIRED = ["orderid","employee","createddate","quantity","subtotalincludingdiscount"];
+const REQUIRED=["orderid","employee","createddate","quantity","subtotalincludingdiscount"];
 
 function parseProductSales(text){
-  const rows = tokenize(text);
+  const rows=tokenize(text);
 
-  // "Report Generated: 8/24/2026 1:13:48 AM"
   let generated="";
   for(let i=0;i<Math.min(rows.length,5);i++){
     const m=(rows[i][0]||"").match(/Report Generated:\s*(.+)$/i);
     if(m){ generated=m[1].trim(); break; }
   }
 
-  // Find the Details header. The file also holds Summary and Hourly Data
-  // blocks, so locate the row that actually carries the columns we need.
+  // The file also carries Summary and Hourly Data blocks — find the
+  // header row that actually holds the columns we need.
   let h=-1;
   for(let i=0;i<rows.length;i++){
-    const head=rows[i].map(x=>x.trim().toLowerCase());
+    const head=rows[i].map(x=>String(x).trim().toLowerCase());
     if(REQUIRED.every(c=>head.indexOf(c)>=0)){ h=i; break; }
   }
   if(h<0) throw new Error("This doesn't look like a Product Sales export — no Details section with OrderId, Employee, Quantity and subtotalincludingdiscount.");
 
-  const head=rows[h].map(x=>x.trim().toLowerCase());
+  const head=rows[h].map(x=>String(x).trim().toLowerCase());
   const col=n=>head.indexOf(n.toLowerCase());
   const cBranch=col("BranchName"), cOrder=col("OrderId"), cEmp=col("Employee"),
         cDate=col("CreatedDate"), cQty=col("Quantity"), cNet=col("subtotalincludingdiscount"),
-        cGross=col("GrossSales"), cStatus=col("Status"), cMem=col("MemberId"),
-        cRefund=col("RefundDate");
+        cStatus=col("Status"), cMem=col("MemberId"), cRefund=col("RefundDate");
 
-  // Roll line items up by order
   const orders=new Map();
   for(let i=h+1;i<rows.length;i++){
     const r=rows[i];
-    if(r.length<head.length-4) continue;                 // blank line / next block
-    if(cStatus>=0 && (r[cStatus]||"").trim()!=="Completed") continue;
-    if(cRefund>=0 && (r[cRefund]||"").trim()) continue;   // drop refunded lines
-    const id=(r[cOrder]||"").trim(); if(!id) continue;
+    if(r.length<head.length-4) continue;                              // blank line / next block
+    if(cStatus>=0 && String(r[cStatus]||"").trim()!=="Completed") continue;
+    if(cRefund>=0 && String(r[cRefund]||"").trim()) continue;         // refunded line
+    const id=String(r[cOrder]||"").trim(); if(!id) continue;
     const date=toISO(r[cDate]); if(!date) continue;
 
     let o=orders.get(id);
     if(!o){
-      o={ order:id, date,
-          store:(cBranch>=0?(r[cBranch]||"").trim():""),
-          emp:(r[cEmp]||"").trim()||"—",
-          net:0, gross:0, units:0, member:false };
+      const branch=cBranch>=0?String(r[cBranch]||"").trim():"";
+      o={ date, store:(branch.match(/#(\d+)/)||[])[1]||branch,
+          emp:String(r[cEmp]||"").trim()||"—", net:0, units:0, member:false };
       orders.set(id,o);
     }
-    o.net   += num(r[cNet]);
-    o.gross += cGross>=0 ? num(r[cGross]) : num(r[cNet]);
-    o.units += num(r[cQty]);
+    o.net+=num(r[cNet]);
+    o.units+=num(r[cQty]);
     if(cMem>=0 && num(r[cMem])>0) o.member=true;
-    if(o.emp==="—" && (r[cEmp]||"").trim()) o.emp=(r[cEmp]||"").trim();
+    if(o.emp==="—" && String(r[cEmp]||"").trim()) o.emp=String(r[cEmp]).trim();
   }
+  if(!orders.size) throw new Error("No completed transactions found in this file.");
 
-  const records=[...orders.values()];
-  if(!records.length) throw new Error("No completed transactions found in this file.");
-  return { records, generated };
+  const cells=new Map();
+  for(const o of orders.values()){
+    const k=`${o.store}|${o.date}|${o.emp}`;
+    let c=cells.get(k);
+    if(!c){ c=[o.store,o.date,o.emp,0,0,0,0]; cells.set(k,c); }
+    c[3]+=o.net; c[4]+=1; c[5]+=o.units; c[6]+=o.member?1:0;
+  }
+  const out=[...cells.values()].map(c=>[c[0],c[1],c[2],Math.round(c[3]*100)/100,c[4],c[5],c[6]]);
+  out.sort((a,b)=>a[0].localeCompare(b[0])||a[1].localeCompare(b[1])||a[2].localeCompare(b[2]));
+  return { cells:out, generated };
 }
 
 /* ============================================================
-   AGGREGATE — every KPI derives from net
+   AGGREGATE — every KPI is a ratio of net / tx / units / memberTx
    ============================================================ */
-function aggregate(records){
-  const tot={net:0,units:0,tx:0,mem:0};
-  const by=new Map();
-  for(const r of records){
-    tot.net+=r.net; tot.units+=r.units; tot.tx++; if(r.member) tot.mem++;
-    let p=by.get(r.emp);
-    if(!p){ p={name:r.emp,net:0,units:0,tx:0,mem:0}; by.set(r.emp,p); }
-    p.net+=r.net; p.units+=r.units; p.tx++; if(r.member) p.mem++;
-  }
-  const derive=o=>({...o,
+function derive(o){
+  return {...o,
     atv: o.tx? o.net/o.tx : 0,
     upt: o.tx? o.units/o.tx : 0,
     aup: o.units? o.net/o.units : 0,
-    ret: o.tx? (o.mem/o.tx)*100 : 0
-  });
-  const dates=[...new Set(records.map(r=>r.date))].sort();
-  return { store:derive(tot), people:[...by.values()].map(derive), dates };
+    ret: o.tx? (o.mem/o.tx)*100 : 0 };
+}
+function aggregate(cells){
+  const tot={net:0,tx:0,units:0,mem:0}, by=new Map();
+  for(const c of cells){
+    tot.net+=c[3]; tot.tx+=c[4]; tot.units+=c[5]; tot.mem+=c[6];
+    let p=by.get(c[2]);
+    if(!p){ p={name:c[2],net:0,tx:0,units:0,mem:0,days:new Set()}; by.set(c[2],p); }
+    p.net+=c[3]; p.tx+=c[4]; p.units+=c[5]; p.mem+=c[6]; p.days.add(c[1]);
+  }
+  return { store:derive(tot), people:[...by.values()].map(p=>derive({...p,days:p.days.size})) };
 }
 
 /* ============================================================
    RENDER
    ============================================================ */
-const state={ sort:"net", records:[], store:null };
+const state={ sort:"net", scope:"week", cells:[], dates:[], store:null, generated:"" };
 const money=n=>"$"+n.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+const short=n=>n>=1000?"$"+(n/1000).toFixed(1)+"k":"$"+n.toFixed(0);
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const sortLbl={net:"net",atv:"ATV",upt:"UPT",aup:"AUP",tx:"tx",ret:"retention"};
+const dayOf=d=>new Date(d+"T12:00:00");
+const wd=d=>dayOf(d).toLocaleDateString(undefined,{weekday:"short"});
+const md=d=>dayOf(d).toLocaleDateString(undefined,{month:"short",day:"numeric"});
 
-function fmtRange(dates){
-  if(!dates.length) return "";
-  const f=d=>new Date(d+"T12:00:00").toLocaleDateString(undefined,{month:"short",day:"numeric"});
-  return dates.length===1 ? f(dates[0]) : `${f(dates[0])} – ${f(dates[dates.length-1])}`;
+function scoped(){
+  return state.scope==="week" ? state.cells : state.cells.filter(c=>c[1]===state.scope);
+}
+
+function renderScope(){
+  const byDay=new Map(state.dates.map(d=>[d,0]));
+  state.cells.forEach(c=>byDay.set(c[1],(byDay.get(c[1])||0)+c[3]));
+  const peak=Math.max(...byDay.values(),1);
+  const week=[...byDay.values()].reduce((a,b)=>a+b,0);
+
+  const btn=(key,top,val,pct)=>`
+    <button class="sc ${key==="week"?"sc-week":""}" data-scope="${key}" aria-pressed="${state.scope===key}">
+      <span class="sc-d">${top}</span>
+      <span class="sc-n">${val}</span>
+      <span class="bar"><span style="width:${pct}%"></span></span>
+    </button>`;
+
+  document.getElementById("scope").innerHTML =
+    btn("week","Week",short(week),100) +
+    state.dates.map(d=>btn(d,`${wd(d)} ${dayOf(d).getDate()}`,short(byDay.get(d)||0),
+      Math.round(((byDay.get(d)||0)/peak)*100))).join("");
+
+  document.querySelectorAll(".sc").forEach(b=>{
+    b.onclick=()=>{ state.scope=b.dataset.scope; render(); };
+  });
 }
 
 function metric(label,val,delta,unit){
   let d="";
   if(delta!==null && delta!==undefined){
     const cls=Math.abs(delta)<0.005?"flat":(delta>0?"up":"down");
-    const sign=delta>0?"+":"";
     const v=unit==="$"?money(Math.abs(delta)).replace("$",""):Math.abs(delta).toFixed(2);
-    d=`<div class="delta ${cls}">${cls==="flat"?"on store avg":`${sign}${delta<0?"−":""}${v}${unit==="%"?"pts":""} vs store`}</div>`;
+    d=`<div class="delta ${cls}">${cls==="flat"?"on store avg":
+      `${delta>0?"+":"−"}${v}${unit==="%"?"pts":""} vs store`}</div>`;
   }
   return `<div class="m"><div class="m-l">${label}</div><div class="m-v">${val}</div>${d}</div>`;
 }
 
 function render(){
-  const {store,people,dates}=aggregate(state.records);
+  renderScope();
+  const cells=scoped();
+  const {store,people}=aggregate(cells);
+  const isWeek=state.scope==="week";
+
   document.getElementById("storeName").textContent=state.store.label;
   document.getElementById("storeSub").textContent=state.store.sub||"";
-  document.getElementById("heroTitle").textContent="Store";
+  document.getElementById("heroTitle").textContent=
+    isWeek?"Week to date":`${wd(state.scope)}, ${md(state.scope)}`;
   document.getElementById("heroMeta").textContent=
-    `${fmtRange(dates)} · ${store.tx.toLocaleString()} transactions`;
+    (isWeek && state.dates.length
+      ? `${md(state.dates[0])} – ${md(state.dates[state.dates.length-1])} · ${state.dates.length} days`
+      : "") + (state.generated?`${isWeek?" · ":""}updated ${state.generated}`:"");
 
   document.getElementById("vNet").textContent=money(store.net);
   document.getElementById("vTx").textContent=store.tx.toLocaleString();
+  document.getElementById("vTxSub").textContent=
+    isWeek && state.dates.length ? `${Math.round(store.tx/state.dates.length)} per day` : "completed orders";
   document.getElementById("vAtv").textContent=money(store.atv);
   document.getElementById("vUpt").textContent=store.upt.toFixed(2);
   document.getElementById("vAup").textContent=money(store.aup);
   document.getElementById("vRet").textContent=store.ret.toFixed(1)+"%";
 
   const el=document.getElementById("rows");
-  if(!people.length){ el.innerHTML=`<div class="empty">No transactions in this window yet.</div>`; return; }
-  const key=state.sort==="net"?"net":state.sort;
-  people.sort((a,b)=>b[key]-a[key]);
+  if(!people.length){ el.innerHTML=`<div class="empty">Nobody rang a sale on this day.</div>`; return; }
+  people.sort((a,b)=>b[state.sort]-a[state.sort]);
 
   el.innerHTML=people.map((p,i)=>{
     const share=store.net?(p.net/store.net)*100:0;
-    const lead=i===0;
     return `<div class="row">
       <div class="rank">${i+1}</div>
       <div class="who">
         <span class="nm">${esc(p.name)}</span>
-        ${lead?`<span class="crown">Top ${sortLbl[state.sort]}</span>`:""}
-        <span class="sh">${share.toFixed(0)}% of net · ${p.tx} tx</span>
+        ${i===0?`<span class="crown">Top ${sortLbl[state.sort]}</span>`:""}
+        <span class="sh">${share.toFixed(0)}% of net · ${p.tx} tx${isWeek?` · ${p.days} ${p.days===1?"day":"days"}`:""}</span>
       </div>
       <div class="metrics">
         ${metric("Net",money(p.net),null)}
@@ -380,52 +440,72 @@ function render(){
 /* ============================================================
    LOAD
    ============================================================ */
-function forStore(records,store){
-  if(!store.match) return records;
-  const m=store.match.toLowerCase();
-  const hit=records.filter(r=>(r.store||"").toLowerCase().includes(m));
-  // A single-store export may not carry a matching BranchName; use it as-is.
-  return hit.length?hit:(new Set(records.map(r=>r.store)).size<=1?records:hit);
+function setCells(cells,generated){
+  const mine=cells.filter(c=>String(c[0])===state.store.id);
+  if(!mine.length) throw new Error(`No rows for ${state.store.label} in this data.`);
+  state.cells=mine;
+  state.dates=[...new Set(mine.map(c=>c[1]))].sort();
+  state.generated=generated||"";
+  if(state.scope!=="week" && state.dates.indexOf(state.scope)<0) state.scope="week";
+  render();
 }
 
-function load(text){
-  const {records,generated}=parseProductSales(text);
-  const mine=forStore(records,state.store);
-  if(!mine.length) throw new Error(`No rows for ${state.store.label} in this export.`);
-  state.records=mine;
-  render();
-  if(generated) document.getElementById("heroMeta").textContent+=` · updated ${generated}`;
+function loadSnapshot(){
+  const raw=document.getElementById("seed").textContent.trim();
+  if(!raw || raw==="__SEED__") throw new Error("No snapshot in this file yet.");
+  const p=JSON.parse(raw);
+  setCells(p.cells||[],p.generated);
+}
+
+function loadCSV(text){
+  const {cells,generated}=parseProductSales(text);
+  state.lastImport={cells,generated};
+  document.getElementById("snapBtn").classList.toggle("hidden",CONFIG.MODE!=="static");
+  setCells(cells,generated);
+}
+
+async function pullAPI(){
+  if(!CONFIG.API_URL) return;
+  const s=document.getElementById("spin"); s.classList.add("spin");
+  try{
+    const url=CONFIG.API_URL+(CONFIG.API_URL.includes("?")?"&":"?")+"code="+encodeURIComponent(state.code);
+    const txt=await (await fetch(url)).text();
+    const p=JSON.parse(txt);
+    if(p.error) throw new Error(p.error);
+    if(p.store&&p.store.label) state.store={...state.store,label:p.store.label,sub:p.store.sub||state.store.sub};
+    setCells(p.cells||[],p.generated);
+  }catch(err){
+    console.warn("Live feed unavailable:",err.message);
+    document.getElementById("rows").innerHTML=
+      `<div class="empty">Couldn't reach the live feed. ${esc(err.message)}</div>`;
+  }finally{ s.classList.remove("spin"); }
 }
 
 document.getElementById("updateBtn").onclick=()=>document.getElementById("file").click();
 document.getElementById("file").onchange=e=>{
   const f=e.target.files[0]; if(!f) return;
   const rd=new FileReader();
-  rd.onload=()=>{ try{ load(rd.result); }catch(err){ alert(err.message); } };
+  rd.onload=()=>{ try{ loadCSV(rd.result); }catch(err){ alert(err.message); } };
   rd.readAsText(f);
   e.target.value="";
+};
+
+document.getElementById("snapBtn").onclick=async()=>{
+  if(!state.lastImport) return;
+  const txt=JSON.stringify({generated:state.lastImport.generated,cells:state.lastImport.cells});
+  const btn=document.getElementById("snapBtn");
+  try{ await navigator.clipboard.writeText(txt); btn.textContent="Copied — paste into #seed"; }
+  catch(e){ window.prompt("Copy this into the #seed block:",txt); }
+  setTimeout(()=>btn.textContent="Copy snapshot",4000);
 };
 
 document.querySelectorAll(".sort button").forEach(b=>{
   b.onclick=()=>{
     state.sort=b.dataset.sort;
     document.querySelectorAll(".sort button").forEach(x=>x.setAttribute("aria-pressed",String(x===b)));
-    if(state.records.length) render();
+    if(state.cells.length) render();
   };
 });
-
-async function pullAPI(){
-  if(!CONFIG.API_URL) return;
-  const btn=document.getElementById("spin"); btn.classList.add("spin");
-  try{
-    const url=CONFIG.API_URL+(CONFIG.API_URL.includes("?")?"&":"?")+"code="+encodeURIComponent(state.code);
-    const res=await fetch(url);
-    const txt=await res.text();
-    load(txt);
-  }catch(err){
-    console.warn("Live feed unavailable:",err.message);
-  }finally{ btn.classList.remove("spin"); }
-}
 
 /* ============================================================
    GATE
@@ -434,9 +514,9 @@ async function sha256(s){
   const buf=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(s));
   return [...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,"0")).join("");
 }
-const store={
+const keep={
   get(k){ try{ return localStorage.getItem(k)||sessionStorage.getItem(k); }catch(e){ return null; } },
-  set(k,v,persist){ try{ (persist?localStorage:sessionStorage).setItem(k,v); }catch(e){} },
+  set(k,v,p){ try{ (p?localStorage:sessionStorage).setItem(k,v); }catch(e){} },
   clear(k){ try{ localStorage.removeItem(k); sessionStorage.removeItem(k); }catch(e){} }
 };
 
@@ -445,10 +525,17 @@ function openStore(s,code){
   document.getElementById("gate").classList.add("hidden");
   document.getElementById("app").classList.remove("hidden");
   document.title=`${s.label} · KPIs`;
-  document.getElementById("rows").innerHTML=
-    `<div class="empty">Choose <b>Update from export</b> and pick today's Product Sales CSV.</div>`;
-  pullAPI();
-  if(CONFIG.API_URL && CONFIG.REFRESH_MINUTES) setInterval(pullAPI,CONFIG.REFRESH_MINUTES*60000);
+
+  if(CONFIG.MODE==="live"){
+    pullAPI();
+    if(CONFIG.REFRESH_MINUTES) setInterval(pullAPI,CONFIG.REFRESH_MINUTES*60000);
+  }else{
+    try{ loadSnapshot(); }
+    catch(err){
+      document.getElementById("rows").innerHTML=
+        `<div class="empty">${esc(err.message)} Choose <b>Update from export</b> to load one.</div>`;
+    }
+  }
 }
 
 document.getElementById("gateForm").onsubmit=async e=>{
@@ -460,24 +547,23 @@ document.getElementById("gateForm").onsubmit=async e=>{
   const s=CONFIG.STORES.find(x=>x.hash===h);
   if(!s){ err.textContent="That code doesn't match a store. Check with your manager."; return; }
   err.textContent="";
-  store.set("blunt.code",code,document.getElementById("remember").checked);
+  keep.set("blunt.code",code,document.getElementById("remember").checked);
   openStore(s,code);
 };
 
-document.getElementById("signOut").onclick=()=>{ store.clear("blunt.code"); location.reload(); };
+document.getElementById("signOut").onclick=()=>{ keep.clear("blunt.code"); location.reload(); };
 
 document.getElementById("genBtn").onclick=async()=>{
   const label=document.getElementById("genStore").value.trim()||"Store";
-  const match=document.getElementById("genMatch").value.trim();
+  const id=document.getElementById("genId").value.trim();
   const code=document.getElementById("genCode").value.trim();
-  if(!code){ document.getElementById("genOut").textContent="Enter a code first."; return; }
-  const h=await sha256(code.toLowerCase());
+  if(!code||!id){ document.getElementById("genOut").textContent="Enter a store number and a code."; return; }
   document.getElementById("genOut").textContent=
-`{ id: "${match.replace(/[^\w]/g,"")||"store"}", label: "${label}", sub: "", match: "${match}", hash: "${h}" },`;
+    `{ id:"${id}", label:"${label}", sub:"", hash:"${await sha256(code.toLowerCase())}" },`;
 };
 
 (async()=>{
-  const saved=store.get("blunt.code");
+  const saved=keep.get("blunt.code");
   if(!saved) return;
   const h=await sha256(saved.toLowerCase());
   const found=CONFIG.STORES.find(x=>x.hash===h);
