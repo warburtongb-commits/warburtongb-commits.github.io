@@ -1,573 +1,488 @@
-<!doctype html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>BLUNT — Store KPIs</title>
+<title>BLUNT · Store KPIs</title>
 <style>
-  :root{
-    /* surfaces & text */
-    --ink:#F4F2ED; --ink-2:#ECE9E1; --surface:#FCFBF9; --surface-2:#F0EDE6;
-    --line:#E6E2D9; --line-2:#DAD5C9;
-    --text:#3A3A38; --muted:#8A877F; --faint:#A8A49B;
-    /* semantic pastels: fill (soft bg) + accent (deeper) */
-    --blue:#8AA0C0; --blue-fill:#DCE4EE; --blue-ink:#4F6385;
-    --sage:#7BA67E; --sage-fill:#DCE8DA; --sage-ink:#4C6B4F;
-    --amber:#D6A867; --amber-fill:#F5E6CF; --amber-ink:#8F6A33;
-    --rose:#C28B8B; --rose-fill:#F0DCDC; --rose-ink:#8B5757;
-    --violet:#A795C0; --violet-fill:#E6E0EE; --violet-ink:#6A5A85;
-    /* role aliases kept so existing component rules recolor cleanly */
-    --green:var(--blue); --green-dim:var(--blue-ink); --green-glow:var(--blue-fill);
-    --gold:var(--amber-ink); --gold-dim:var(--amber-fill);
-    --alert:var(--rose-ink);
-    --mono:ui-monospace,"SF Mono","Cascadia Code","JetBrains Mono",Menlo,Consolas,monospace;
-    --sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-    --r:14px;
-  }
-  *{box-sizing:border-box}
-  html,body{margin:0}
-  body{
-    background:radial-gradient(1200px 600px at 80% -10%, rgba(138,160,192,.12), transparent 60%), var(--ink);
-    color:var(--text); font-family:var(--sans); -webkit-font-smoothing:antialiased; line-height:1.45;
-    padding:22px clamp(14px,4vw,40px) 48px;
-  }
-  .wrap{max-width:1080px;margin:0 auto}
+:root{
+  --bg:#0e1116; --panel:#161b23; --panel2:#1c222c; --line:#242c38;
+  --ink:#e8edf4; --mute:#8d9aad; --dim:#5d6a7d;
+  --up:#3fbf87; --down:#e06a63; --accent:#e2b13c;
+  --r:14px;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font:15px/1.45 ui-sans-serif,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  -webkit-font-smoothing:antialiased}
+.wrap{max-width:1080px;margin:0 auto;padding:22px 18px 60px}
+.brand{display:flex;flex-direction:column;gap:2px}
+.kicker{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--accent);font-weight:700}
+h1{font-size:24px;margin:2px 0 0;font-weight:700;letter-spacing:-.01em}
+h2{font-size:15px;margin:0;font-weight:700;letter-spacing:.02em}
+.sub{font-size:13px;color:var(--mute)}
+.sub b{color:var(--ink);font-weight:600}
+.topbar{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;flex-wrap:wrap}
+.status{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+button{font:inherit;color:var(--ink);background:var(--panel2);border:1px solid var(--line);
+  border-radius:9px;padding:8px 12px;cursor:pointer}
+button:hover{border-color:#334052}
+button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.update-btn{font-size:13px;display:inline-flex;align-items:center;gap:7px}
+.ghost{background:transparent;color:var(--mute);font-size:12px;padding:6px 10px}
 
-  .topbar{display:flex;flex-wrap:wrap;gap:16px;align-items:flex-end;justify-content:space-between;margin-bottom:20px}
-  .brand{display:flex;flex-direction:column;gap:3px}
-  .brand .kicker{font-size:11px;letter-spacing:.28em;text-transform:uppercase;color:var(--green);font-weight:700}
-  .brand h1{margin:0;font-size:clamp(20px,3vw,27px);font-weight:680;letter-spacing:-.01em}
-  .brand .sub{font-size:13px;color:var(--muted)}
-  .brand .sub b{color:var(--text);font-weight:600}
-  .status{display:flex;flex-direction:column;align-items:flex-end;gap:7px;text-align:right}
-  .pill{display:inline-flex;align-items:center;gap:8px;font-family:var(--mono);font-size:12px;padding:6px 11px;border:1px solid var(--line);border-radius:999px;background:var(--ink-2);color:var(--muted)}
-  .pill.live{color:var(--sage-ink);border-color:var(--sage);background:var(--sage-fill)}
-  .dot{width:7px;height:7px;border-radius:50%;background:currentColor}
-  .pill.live .dot{animation:pulse 2.4s ease-out infinite}
-  @keyframes pulse{0%{box-shadow:0 0 0 0 var(--sage-fill)}70%{box-shadow:0 0 0 7px transparent}100%{box-shadow:0 0 0 0 transparent}}
-  .gen{font-size:12px;color:var(--faint);font-family:var(--mono)}
-  .gen b{color:var(--muted);font-weight:500}
-  .update-btn{font:inherit;font-size:13px;font-weight:650;color:#fff;background:var(--blue-ink);border:0;border-radius:9px;padding:9px 15px;cursor:pointer;display:inline-flex;align-items:center;gap:7px}
-  .update-btn:hover{filter:brightness(1.07)}
-  .update-btn:focus-visible{outline:2px solid var(--text);outline-offset:2px}
+/* hero + kpis */
+.hero{margin-top:18px;background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:16px 18px}
+.hero-top{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap}
+.meta{font-size:12px;color:var(--dim)}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-top:14px}
+.kpi{background:var(--panel2);border:1px solid var(--line);border-radius:11px;padding:11px 12px}
+.k-label{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--mute);font-weight:600}
+.k-val{font-size:23px;font-weight:700;margin-top:3px;letter-spacing:-.02em;
+  font-variant-numeric:tabular-nums}
+.k-sub{font-size:11px;color:var(--dim);margin-top:2px}
 
-  /* window toggle — the organizing device */
-  .toggle{display:flex;gap:5px;background:var(--ink-2);border:1px solid var(--line);border-radius:12px;padding:5px;margin-bottom:18px;max-width:420px}
-  .toggle button{flex:1;font:inherit;font-weight:650;font-size:14px;color:var(--muted);background:none;border:0;padding:11px;border-radius:8px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;letter-spacing:.01em}
-  .toggle button .rng{font-family:var(--mono);font-size:11px;font-weight:500;color:var(--faint);letter-spacing:0}
-  .toggle button[aria-pressed="true"]{background:var(--surface-2);color:var(--text)}
-  .toggle button[aria-pressed="true"] .rng{color:var(--green)}
-  .toggle button:focus-visible{outline:2px solid var(--green);outline-offset:2px}
+/* budtenders */
+.section-head{display:flex;justify-content:space-between;align-items:center;gap:12px;
+  margin:26px 0 10px;flex-wrap:wrap}
+.sort{display:flex;gap:6px;flex-wrap:wrap}
+.sort button{font-size:12px;padding:6px 11px;color:var(--mute)}
+.sort button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#171307;font-weight:600}
+.row{display:grid;grid-template-columns:36px minmax(150px,1.1fr) 3fr;gap:12px;align-items:center;
+  background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;margin-bottom:8px}
+.rank{font-size:15px;font-weight:700;color:var(--dim);text-align:center;font-variant-numeric:tabular-nums}
+.who{display:flex;flex-direction:column;gap:3px;min-width:0}
+.nm{font-weight:650;letter-spacing:-.01em}
+.crown{align-self:flex-start;font-size:10px;letter-spacing:.08em;text-transform:uppercase;
+  background:rgba(226,177,60,.14);color:var(--accent);border-radius:5px;padding:2px 6px;font-weight:700}
+.sh{font-size:11px;color:var(--dim)}
+.metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(84px,1fr));gap:8px}
+.m{background:var(--panel2);border-radius:9px;padding:7px 9px}
+.m-l{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--mute);font-weight:600}
+.m-v{font-size:15px;font-weight:650;font-variant-numeric:tabular-nums;margin-top:1px}
+.suf{font-size:11px;color:var(--mute);font-weight:500}
+.delta{font-size:10px;margin-top:1px;font-variant-numeric:tabular-nums}
+.delta.up{color:var(--up)} .delta.down{color:var(--down)} .delta.flat{color:var(--dim)}
+.empty{background:var(--panel);border:1px dashed var(--line);border-radius:var(--r);
+  padding:26px;text-align:center;color:var(--mute)}
 
-  .hero{border:1px solid var(--line);border-radius:var(--r);background:linear-gradient(180deg,var(--surface),var(--ink-2));overflow:hidden;margin-bottom:22px}
-  .hero-head{display:flex;align-items:center;justify-content:space-between;padding:13px 18px;border-bottom:1px solid var(--line)}
-  .hero-head .label{font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);font-weight:700}
-  .hero-head .meta{font-family:var(--mono);font-size:12px;color:var(--faint)}
-  .kpis{display:grid;grid-template-columns:repeat(4,1fr)}
-  .kpi{padding:22px 18px;border-right:1px solid var(--line)}
-  .kpi:last-child{border-right:0}
-  .kpi .k-label{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);font-weight:700}
-  .kpi .k-val{font-family:var(--mono);font-weight:680;letter-spacing:-.02em;font-variant-numeric:tabular-nums;margin-top:9px;font-size:clamp(26px,4.2vw,40px);line-height:1}
-  .kpi .k-sub{font-family:var(--mono);font-size:12px;color:var(--faint);margin-top:8px}
-  .kpi .k-val .cur,.kpi .k-val .suf{color:var(--muted);font-size:.5em;font-weight:600;letter-spacing:0}
-  .hero-foot{display:flex;flex-wrap:wrap;border-top:1px solid var(--line)}
-  .stat{flex:1 1 0;min-width:120px;padding:11px 18px;border-right:1px solid var(--line);font-family:var(--mono)}
-  .stat:last-child{border-right:0}
-  .stat .s-l{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);font-family:var(--sans);font-weight:700}
-  .stat .s-v{font-size:16px;margin-top:3px;font-variant-numeric:tabular-nums}
-
-  .section-head{display:flex;align-items:center;justify-content:space-between;margin:0 2px 12px}
-  .section-head h2{margin:0;font-size:13px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);font-weight:700}
-  .sort{display:flex;gap:4px;background:var(--ink-2);border:1px solid var(--line);border-radius:999px;padding:3px}
-  .sort button{font:inherit;font-size:11.5px;font-weight:600;color:var(--muted);background:none;border:0;padding:5px 11px;border-radius:999px;cursor:pointer}
-  .sort button[aria-pressed="true"]{background:var(--surface-2);color:var(--text)}
-  .sort button:focus-visible{outline:2px solid var(--green);outline-offset:2px}
-
-  .rows{display:flex;flex-direction:column;gap:10px}
-  .empty{border:1px dashed var(--line-2);border-radius:var(--r);padding:30px;text-align:center;color:var(--muted);font-family:var(--mono);font-size:13px}
-  .row{border:1px solid var(--line);border-radius:var(--r);background:var(--surface);padding:15px 18px;display:grid;grid-template-columns:34px 1fr;gap:0 16px;align-items:center;transition:border-color .15s}
-  .row:hover{border-color:var(--line-2)}
-  .row.lead{border-color:var(--amber);background:linear-gradient(180deg,var(--amber-fill),var(--surface))}
-  .rank{font-family:var(--mono);font-size:20px;font-weight:680;color:var(--faint);text-align:center;font-variant-numeric:tabular-nums}
-  .row.lead .rank{color:var(--gold)}
-  .who{grid-column:2;display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
-  .who .nm{font-size:16px;font-weight:650;letter-spacing:-.01em}
-  .who .crown{font-size:11px;color:var(--gold);font-weight:700;letter-spacing:.08em;text-transform:uppercase}
-  .who .sh{font-family:var(--mono);font-size:11px;color:var(--faint)}
-  .metrics{grid-column:2;display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:14px;margin-top:12px}
-  .metric .m-l{font-size:10.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--faint);font-weight:700}
-  .metric .m-row{display:flex;align-items:baseline;gap:8px;margin-top:3px}
-  .metric .m-v{font-family:var(--mono);font-size:20px;font-weight:650;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
-  .metric .m-v .cur,.metric .m-v .suf{color:var(--muted);font-size:.62em}
-  .delta{font-family:var(--mono);font-size:11px;font-weight:600;padding:1px 6px;border-radius:6px;white-space:nowrap}
-  .delta.up{color:var(--sage-ink);background:var(--sage-fill)}
-  .delta.down{color:var(--rose-ink);background:var(--rose-fill)}
-  .delta.flat{color:var(--faint);background:var(--ink-2)}
-  .bar{grid-column:2;height:5px;border-radius:999px;background:var(--ink-2);margin-top:14px;overflow:hidden}
-  .bar > i{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,var(--green-dim),var(--green));width:0;transition:width .5s ease}
-  .row.lead .bar > i{background:linear-gradient(90deg,var(--amber),var(--amber-ink))}
-  .foot-line{grid-column:2;font-family:var(--mono);font-size:12px;color:var(--faint);margin-top:11px;font-variant-numeric:tabular-nums}
-  .foot-line span{color:var(--muted)}
-
-  .source{margin-top:24px;border:1px solid var(--line);border-radius:var(--r);background:var(--ink-2)}
-  .source summary{cursor:pointer;list-style:none;padding:14px 18px;display:flex;align-items:center;justify-content:space-between;font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);font-weight:700}
-  .source summary::-webkit-details-marker{display:none}
-  .source summary .chev{transition:transform .2s;color:var(--faint)}
-  .source[open] summary .chev{transform:rotate(90deg)}
-  .source-body{padding:4px 18px 20px;border-top:1px solid var(--line)}
-  .modes{display:flex;gap:4px;background:var(--ink);border:1px solid var(--line);border-radius:10px;padding:4px;margin:16px 0 14px;flex-wrap:wrap}
-  .modes button{flex:1 1 auto;font:inherit;font-size:12.5px;font-weight:600;color:var(--muted);background:none;border:0;padding:9px;border-radius:7px;cursor:pointer}
-  .modes button[aria-pressed="true"]{background:var(--surface-2);color:var(--text)}
-  .panel{display:none;font-size:13px;color:var(--muted)}
-  .panel.show{display:block}
-  .panel p{margin:0 0 12px;line-height:1.55}
-  .panel code{font-family:var(--mono);font-size:12px;color:var(--green);background:var(--ink);padding:1px 5px;border-radius:4px}
-  .field{display:flex;gap:8px;flex-wrap:wrap}
-  input[type=url]{flex:1 1 260px;font-family:var(--mono);font-size:13px;color:var(--text);background:var(--surface);border:1px solid var(--line-2);border-radius:8px;padding:10px 12px}
-  input[type=url]:focus{outline:2px solid var(--green);outline-offset:1px;border-color:var(--green-dim)}
-  .btn{font:inherit;font-size:13px;font-weight:600;color:#fff;background:var(--blue-ink);border:0;border-radius:8px;padding:10px 16px;cursor:pointer}
-  .btn:hover{filter:brightness(1.06)}
-  .btn.ghost{background:none;color:var(--text);border:1px solid var(--line-2)}
-  .controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:16px;padding-top:16px;border-top:1px solid var(--line)}
-  .controls label{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:7px}
-  select{font-family:var(--mono);font-size:13px;color:var(--text);background:var(--surface);border:1px solid var(--line-2);border-radius:7px;padding:7px 9px}
-  .controls .spacer{flex:1}
-  .err{display:none;margin-top:12px;font-size:12.5px;color:var(--rose-ink);font-family:var(--mono);background:var(--rose-fill);border:1px solid var(--rose);border-radius:8px;padding:10px 12px}
-  .err.show{display:block}
-  input[type=file]{font-size:13px;color:var(--muted)}
-  input[type=file]::file-selector-button{font:inherit;font-weight:600;color:var(--text);background:var(--surface-2);border:1px solid var(--line-2);border-radius:7px;padding:8px 12px;margin-right:10px;cursor:pointer}
-
-  #dropZone{position:fixed;inset:0;z-index:50;display:none;align-items:center;justify-content:center;background:rgba(244,242,237,.88);backdrop-filter:blur(3px)}
-  #dropZone.show{display:flex}
-  #dropZone .card{border:2px dashed var(--green);border-radius:18px;padding:46px 60px;text-align:center;background:var(--surface)}
-  #dropZone .big{font-size:20px;font-weight:680}
-  #dropZone .small{font-size:13px;color:var(--muted);margin-top:8px;font-family:var(--mono)}
-
-  @media (max-width:760px) and (min-width:561px){
-    .kpis{grid-template-columns:repeat(2,1fr)}
-    .kpi:nth-child(2){border-right:0}
-    .kpi:nth-child(1),.kpi:nth-child(2){border-bottom:1px solid var(--line)}
-  }
-  @media (max-width:560px){
-    .kpis{grid-template-columns:1fr}
-    .kpi{border-right:0;border-bottom:1px solid var(--line)}
-    .kpi:last-child{border-bottom:0}
-    .stat{flex-basis:50%}
-  }
-  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+/* gate */
+.gate{max-width:380px;margin:14vh auto 0;padding:0 18px}
+.gate-card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:22px}
+.gate h1{font-size:20px;margin-bottom:4px}
+label{display:block;font-size:12px;color:var(--mute);margin:16px 0 6px;font-weight:600}
+input{width:100%;font:inherit;background:var(--panel2);color:var(--ink);border:1px solid var(--line);
+  border-radius:9px;padding:10px 12px}
+.gate button[type=submit]{width:100%;margin-top:14px;background:var(--accent);border-color:var(--accent);
+  color:#171307;font-weight:650;padding:10px}
+.err{color:var(--down);font-size:13px;margin-top:10px;min-height:18px}
+.hint{font-size:12px;color:var(--dim);margin-top:14px}
+.check{display:flex;align-items:center;gap:8px;margin-top:12px;font-size:12px;color:var(--mute)}
+.check input{width:auto}
+details{margin-top:26px;font-size:13px;color:var(--mute)}
+summary{cursor:pointer;color:var(--dim)}
+details .body{background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:14px;margin-top:10px}
+code{background:var(--panel2);padding:1px 5px;border-radius:4px;font-size:12px}
+.hidden{display:none !important}
+@media (max-width:640px){
+  .row{grid-template-columns:28px 1fr;row-gap:10px}
+  .metrics{grid-column:1 / -1}
+}
+@media (prefers-reduced-motion:no-preference){
+  .spin{animation:sp 1s linear infinite}
+  @keyframes sp{to{transform:rotate(360deg)}}
+}
 </style>
+</head>
+<body>
 
-<div id="dropZone"><div class="card"><div class="big">Drop your Order Details export</div><div class="small">.csv — duplicate orders are ignored automatically</div></div></div>
-<input type="file" id="globalFile" accept=".csv,text/csv" multiple hidden>
-
-<div class="wrap">
-  <div class="topbar">
-    <div class="brand">
-      <span class="kicker">BLUNT · Store KPIs</span>
-      <h1 id="storeName">Imagine Cannabis #206</h1>
-      <span class="sub"><b>White Rock</b> · Net sales · ATV · UPT</span>
-    </div>
-    <div class="status">
-      <button class="update-btn" id="updateBtn"><span>⟳</span> Update from export</button>
-      <span class="pill" id="statusPill"><span class="dot"></span><span id="statusText">Snapshot</span></span>
-      <span class="gen" id="freshLine"></span>
-    </div>
+<!-- ================= STORE GATE ================= -->
+<div class="gate" id="gate">
+  <div class="gate-card">
+    <span class="kicker">BLUNT · Store KPIs</span>
+    <h1>Enter your store code</h1>
+    <div class="sub">Each store sees only its own numbers.</div>
+    <form id="gateForm">
+      <label for="code">Store code</label>
+      <input id="code" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="••••••••">
+      <div class="check"><input type="checkbox" id="remember"><label for="remember" style="margin:0">Keep me signed in on this device</label></div>
+      <button type="submit">Open dashboard</button>
+      <div class="err" id="gateErr"></div>
+    </form>
   </div>
-
-  <div class="toggle" role="group" aria-label="Time window">
-    <button data-win="today" aria-pressed="true">Today<span class="rng" id="rngToday">—</span></button>
-    <button data-win="week" aria-pressed="false">This Week<span class="rng" id="rngWeek">—</span></button>
-  </div>
-
-  <section class="hero" aria-label="Store totals">
-    <div class="hero-head">
-      <span class="label" id="heroLabel">Store</span>
-      <span class="meta" id="heroMeta">—</span>
-    </div>
-    <div class="kpis">
-      <div class="kpi"><div class="k-label">Net sales</div><div class="k-val" id="vGross">—</div><div class="k-sub">after discounts, before tax</div></div>
-      <div class="kpi"><div class="k-label">ATV</div><div class="k-val" id="vAtv">—</div><div class="k-sub">avg transaction value</div></div>
-      <div class="kpi"><div class="k-label">UPT</div><div class="k-val" id="vUpt">—</div><div class="k-sub">units per transaction</div></div>
-      <div class="kpi"><div class="k-label">Retention</div><div class="k-val" id="vRet">—</div><div class="k-sub">member capture rate</div></div>
-    </div>
-    <div class="hero-foot">
-      <div class="stat"><div class="s-l">Transactions</div><div class="s-v" id="sTx">—</div></div>
-      <div class="stat"><div class="s-l">Units sold</div><div class="s-v" id="sUnits">—</div></div>
-      <div class="stat"><div class="s-l">Members</div><div class="s-v" id="sMembers">—</div></div>
-      <div class="stat"><div class="s-l">Budtenders</div><div class="s-v" id="sStaff">—</div></div>
-    </div>
-  </section>
-
-  <div class="section-head">
-    <h2>Budtenders</h2>
-    <div class="sort" role="group" aria-label="Sort budtenders">
-      <button data-sort="gross" aria-pressed="true">Net</button>
-      <button data-sort="atv" aria-pressed="false">ATV</button>
-      <button data-sort="upt" aria-pressed="false">UPT</button>
-      <button data-sort="tx" aria-pressed="false">Tx</button>
-      <button data-sort="ret" aria-pressed="false">Retain</button>
-    </div>
-  </div>
-  <div class="rows" id="rows"></div>
-
-  <details class="source">
-    <summary>Data source &amp; live link <span class="chev">›</span></summary>
-    <div class="source-body">
-      <div class="modes" role="group" aria-label="Data source mode">
-        <button data-mode="live" aria-pressed="true">Live Google Sheet</button>
-        <button data-mode="upload" aria-pressed="false">Upload export</button>
-      </div>
-
-      <div class="panel show" data-panel="live">
-        <p>This reads your Sheet through an Apps Script web app (the <code>blunt-kpi-api.gs</code> setup). Deploy that script, then paste its <b>/exec</b> URL below. The dashboard re-reads it on the interval you choose, so once you update the Sheet, every screen updates on its own. Completed orders only, and duplicate OrderNumbers are ignored — overlapping week-to-date pastes are safe. (A published <code>output=csv</code> link also works here if you ever need it.)</p>
-        <div class="field">
-          <input type="url" id="urlInput" placeholder="https://script.google.com/macros/s/..../exec" autocomplete="off" spellcheck="false">
-          <button class="btn" id="urlLoad">Connect &amp; auto-refresh</button>
-        </div>
-        <div class="err" id="urlErr"></div>
-      </div>
-
-      <div class="panel" data-panel="upload">
-        <p>Drop an Order Details export anywhere on the page, or pick one below. Good for a quick look without the live link.</p>
-        <input type="file" id="fileInput" accept=".csv,text/csv" multiple>
-        <div class="err" id="fileErr"></div>
-      </div>
-
-      <div class="controls">
-        <label>Refresh
-          <select id="interval">
-            <option value="5">every 5 min</option>
-            <option value="10" selected>every 10 min</option>
-            <option value="15">every 15 min</option>
-            <option value="30">every 30 min</option>
-          </select>
-        </label>
-        <div class="spacer"></div>
-        <span class="gen" id="nextRefresh"></span>
-        <button class="btn ghost" id="refreshNow">Refresh now</button>
-      </div>
+  <details>
+    <summary>Add a store code</summary>
+    <div class="body">
+      <p style="margin-top:0">Type the code you want to hand out, copy the line it produces, and paste it into the <code>STORES</code> list at the top of this file.</p>
+      <label for="genStore">Store label</label>
+      <input id="genStore" placeholder="Imagine Cannabis #206 — White Rock">
+      <label for="genMatch">Text to match in BranchName</label>
+      <input id="genMatch" placeholder="#206">
+      <label for="genCode">Code</label>
+      <input id="genCode" placeholder="whiterock-206">
+      <button type="button" id="genBtn" style="margin-top:12px">Generate line</button>
+      <pre id="genOut" style="white-space:pre-wrap;word-break:break-all;font-size:11px;color:var(--mute)"></pre>
     </div>
   </details>
 </div>
 
-<script type="text/csv" id="seed">Report Generated: 6/27/2026 3:23:29 PM
-Employee,PatientId,CreatedDate,OrderNumber,OpenedProducts,SoldProducts,VoidedProducts,CancelledProducts,ReturnedProducts,ApprovalUser,ApprovalType,discountreason,SubTotal,DeliveryFees,PaymentType,OrderComment,OrderProductNotes,DiscountComment,Discount,Taxes,reason,Total,Status,Totalrow,TaxExemptAll,UseFNTax,TipAmount,MemberSavingTotal,PriceMatchPlus,PatientGroupId,PatientGroupName
-Clarence McNeill,87066,2026-06-27 12:21:35,4475290,0,1,0,0,0, ,,,27.80,0.00,Credit,,,,0.00,3.34,,31.14,Completed,39,False,False,0,0.00,False,,
-Clarence McNeill,88150,2026-06-27 12:18:06,4475255,0,2,0,0,0, ,,,10.90,0.00,Credit,,,,0.00,1.30,,12.20,Completed,39,False,False,0,0.00,False,,
-Clarence McNeill,0,2026-06-27 12:16:45,4475243,0,1,0,0,0, ,,,40.95,0.00,Cash,,,,0.00,10.65,,51.60,Completed,39,False,False,0,0,False,,
-Clarence McNeill,0,2026-06-27 12:05:54,4475148,0,1,0,0,0, ,,,34.95,0.00,Debit,,,,0.00,9.09,,44.04,Completed,39,False,False,0,0,False,,
-Clarence McNeill,216646,2026-06-27 12:04:48,4475136,0,1,0,0,0, ,,,31.95,0.00,Credit,,,,0.00,8.31,,40.26,Completed,39,False,False,0,0.00,False,,
-Gavin Warburton,258937,2026-06-27 11:54:20,4475042,0,3,0,0,0, ,,,49.85,0.00,Debit,,,,0.00,5.98,,55.83,Completed,39,False,False,5.00,0.00,False,,
-Gavin Warburton,96373,2026-06-27 11:46:38,4474958,0,2,0,0,0, ,,,73.90,0.00,Debit,,,,0.00,14.04,,87.94,Completed,39,False,False,0,0.00,False,,
-Gavin Warburton,0,2026-06-27 11:39:57,4474891,0,1,0,0,0, ,,,31.95,0.00,Debit,,,,0.00,8.31,,40.26,Completed,39,False,False,0,0,False,,
-Gavin Warburton,0,2026-06-27 11:38:50,4474879,0,1,0,0,0, ,,,24.95,0.00,Cash,,,,0.00,3.00,,27.95,Completed,39,False,False,0,0,False,,
-Clarence McNeill,169878,2026-06-27 11:35:44,4474854,0,1,0,0,0, ,,,6.95,0.00,Credit,,Promotion price discount,,1.95,0.60,,5.60,Completed,39,False,False,0.50,0.00,False,,
-Clarence McNeill,169878,2026-06-27 11:32:35,4474813,0,2,0,0,0, ,,,53.90,0.00,Debit,,,,0.00,6.47,,60.37,Completed,39,False,False,1.00,0.00,False,,
-Clarence McNeill,0,2026-06-27 11:25:19,4474755,0,1,0,0,0, ,,,39.95,0.00,Cash,,,,0.00,10.39,,50.34,Completed,39,False,False,0,0,False,,
-Clarence McNeill,174451,2026-06-27 11:20:19,4474713,0,1,0,0,0, ,,,31.95,0.00,Debit,,,,0.00,8.31,,40.26,Completed,39,False,False,0,0.00,False,,
-Clarence McNeill,228413,2026-06-27 11:15:40,4474669,0,1,0,0,0, ,,,44.49,0.00,Credit,,,,0.00,11.57,,56.06,Completed,39,False,False,0,0.00,False,,
-Clarence McNeill,181822,2026-06-27 11:13:41,4474650,0,1,0,0,0, ,,,16.95,0.00,Credit,,,,0.00,2.04,,18.99,Completed,39,False,False,0,0.00,False,,
-Clarence McNeill,0,2026-06-27 11:11:26,4474626,0,3,0,0,0, ,,,50.85,0.00,Debit,,,,0.00,6.10,,56.95,Completed,39,False,False,0,0,False,,
-Clarence McNeill,0,2026-06-27 10:58:49,4474531,0,1,0,0,0, ,,,13.95,0.00,Debit,,,,0.00,1.68,,15.63,Completed,39,False,False,0,0,False,,
-Clarence McNeill,92220,2026-06-27 10:51:09,4474463,0,1,0,0,0, ,,,23.95,0.00,Cash,,,,0.00,2.88,,26.83,Completed,39,False,False,0,0.00,False,,
-Clarence McNeill,0,2026-06-27 10:49:53,4474450,0,1,0,0,0, ,,,29.95,0.00,Cash/Credit,,,,0.00,7.79,,37.74,Completed,39,False,False,0,0,False,,
-Clarence McNeill,145167,2026-06-27 10:44:39,4474402,0,1,0,0,0, ,,,17.95,0.00,Debit,,,,0.00,2.16,,20.11,Completed,39,False,False,0,0.00,False,,
-Clarence McNeill,0,2026-06-27 10:44:00,4474397,0,1,0,0,0, ,,,25.99,0.00,Debit,,,,0.00,3.12,,29.11,Completed,39,False,False,0,0,False,,
-Clarence McNeill,254919,2026-06-27 10:40:52,4474371,0,1,0,0,0,Clarence McNeill,Order Discount,Customized Discount,66.95,0.00,Cash,,,,6.70,7.23,,67.48,Completed,39,False,False,0,-2.00,False,,
-Clarence McNeill,0,2026-06-27 10:36:04,4474336,0,1,0,0,0, ,,,44.95,0.00,Credit,,,,0.00,5.40,,50.35,Completed,39,False,False,0,0,False,,
-Clarence McNeill,116006,2026-06-27 10:33:19,4474316,0,3,0,0,0, ,,,59.85,0.00,Credit,,Promotion price discount,,2.96,12.00,,68.89,Completed,39,False,False,0,0.00,False,,
-Clarence McNeill,50075,2026-06-27 10:31:47,4474301,0,1,0,0,0, ,,,44.95,0.00,Debit,,,,0.00,11.69,,56.64,Completed,39,False,False,0,0.00,False,,
-Clarence McNeill,247976,2026-06-27 10:23:17,4474232,0,2,0,0,0, ,,,71.90,0.00,Credit,,,,0.00,8.63,,80.53,Completed,39,False,False,0,0.00,False,,
-Clarence McNeill,109859,2026-06-27 10:21:29,4474215,0,4,0,0,0, ,,,24.80,0.00,Debit,,,,0.00,2.98,,27.78,Completed,39,False,False,0,0.00,False,,
-Clarence McNeill,0,2026-06-27 10:16:54,4474177,0,2,0,0,0, ,,,43.90,0.00,Debit,,,,0.00,5.27,,49.17,Completed,39,False,False,0,0,False,,
-Clarence McNeill,0,2026-06-27 10:13:45,4474147,0,1,0,0,0, ,,,5.95,0.00,Debit,,,,0.00,0.72,,6.67,Completed,39,False,False,0,0,False,,
-Clarence McNeill,212923,2026-06-27 10:10:58,4474131,0,1,0,0,0, ,,,12.95,0.00,Debit,,,,0.00,1.56,,14.51,Completed,39,False,False,0,0.00,False,,
-Clarence McNeill,182833,2026-06-27 10:04:13,4474079,0,2,0,0,0, ,,,91.90,0.00,Debit,,,,0.00,11.03,,102.93,Completed,39,False,False,5.00,0.00,False,,
-Clarence McNeill,117028,2026-06-27 09:58:00,4474036,0,1,0,0,0, ,,,77.95,0.00,Debit,,,,0.00,9.36,,87.31,Completed,39,False,False,0,0.00,False,,
-Clarence McNeill,0,2026-06-27 09:57:24,4474033,0,1,0,0,0, ,,,1.95,0.00,Credit,,,,0.00,0.24,,2.19,Completed,39,False,False,0,0,False,,
-Clarence McNeill,71093,2026-06-27 09:56:35,4474024,0,1,0,0,0, ,,,17.95,0.00,Credit,,,,0.00,2.16,,20.11,Completed,39,False,False,2.00,0.00,False,,
-Clarence McNeill,148307,2026-06-27 09:53:25,4473999,0,4,0,0,0, ,,,64.75,0.00,Credit,,,,0.00,13.09,,77.84,Completed,39,False,False,0,0.00,False,,
-Clarence McNeill,113313,2026-06-27 09:37:29,4473906,0,6,0,0,0, ,,,111.70,0.00,Credit,,Promotion price discount / Promotion price discount / Promotion price discount / Promotion price discount,,7.80,12.47,,116.37,Completed,39,False,False,0,0.00,False,,
-Clarence McNeill,188230,2026-06-27 09:34:36,4473881,0,1,0,0,0, ,,,13.95,0.00,Credit,,,,0.00,1.68,,15.63,Completed,39,False,False,0,0.00,False,,
-Clarence McNeill,100654,2026-06-27 09:25:41,4473814,0,1,0,0,0, ,,,14.95,0.00,Cash,,,,0.00,1.80,,16.75,Completed,39,False,False,0,0.00,False,,
-Clarence McNeill,113002,2026-06-27 09:07:39,4473708,0,2,0,0,0, ,,,55.90,0.00,Debit,,,,0.00,6.71,,62.61,Completed,39,False,False,0,0.00,False,,
-</script>
+<!-- ================= DASHBOARD ================= -->
+<div class="wrap hidden" id="app">
+  <div class="topbar">
+    <div class="brand">
+      <span class="kicker">BLUNT · Store KPIs</span>
+      <h1 id="storeName">—</h1>
+      <span class="sub"><b id="storeSub">—</b> · Net sales · ATV · UPT · AUP</span>
+    </div>
+    <div class="status">
+      <button class="update-btn" id="updateBtn"><span id="spin">⟳</span> Update from export</button>
+      <button class="ghost" id="signOut">Sign out</button>
+      <input type="file" id="file" accept=".csv,text/csv" class="hidden">
+    </div>
+  </div>
+
+  <div class="hero">
+    <div class="hero-top">
+      <h2 id="heroTitle">Store</h2>
+      <span class="meta" id="heroMeta">—</span>
+    </div>
+    <div class="kpis">
+      <div class="kpi"><div class="k-label">Net sales</div><div class="k-val" id="vNet">—</div><div class="k-sub">after discounts, before tax</div></div>
+      <div class="kpi"><div class="k-label">Transactions</div><div class="k-val" id="vTx">—</div><div class="k-sub">completed orders</div></div>
+      <div class="kpi"><div class="k-label">ATV</div><div class="k-val" id="vAtv">—</div><div class="k-sub">net per transaction</div></div>
+      <div class="kpi"><div class="k-label">UPT</div><div class="k-val" id="vUpt">—</div><div class="k-sub">units per transaction</div></div>
+      <div class="kpi"><div class="k-label">AUP</div><div class="k-val" id="vAup">—</div><div class="k-sub">net per unit</div></div>
+      <div class="kpi"><div class="k-label">Retention</div><div class="k-val" id="vRet">—</div><div class="k-sub">member capture rate</div></div>
+    </div>
+  </div>
+
+  <div class="section-head">
+    <h2>Budtenders</h2>
+    <div class="sort" role="group" aria-label="Sort budtenders">
+      <button data-sort="net" aria-pressed="true">Net</button>
+      <button data-sort="atv" aria-pressed="false">ATV</button>
+      <button data-sort="upt" aria-pressed="false">UPT</button>
+      <button data-sort="aup" aria-pressed="false">AUP</button>
+      <button data-sort="tx" aria-pressed="false">Tx</button>
+      <button data-sort="ret" aria-pressed="false">Retention</button>
+    </div>
+  </div>
+  <div id="rows"></div>
+</div>
+
 <script>
 /* ============================================================
-   CONFIG
+   CONFIG — the only part you edit per store
    ============================================================ */
 const CONFIG = {
-  STORE_LABEL: "Imagine Cannabis #206",   // shown in the header
-  API_URL: "https://script.google.com/macros/s/AKfycbz9Gs2plSF9UIPWvqwguZd8qqe9djaqCSmCg7kg1psh9gP640Du4P0pV4aeBSSXiSrSaA/exec",                             // paste your Apps Script /exec URL here to auto-connect on open
-  REFRESH_MINUTES: 10
+  // Apps Script /exec URL. Leave "" to run from file uploads only.
+  API_URL: "",
+  REFRESH_MINUTES: 10,
+
+  // One entry per store. `match` is checked against the report's BranchName
+  // column (case-insensitive, partial match). `hash` comes from the
+  // "Add a store code" tool on the sign-in screen.
+  STORES: [
+    {
+      id: "206",
+      label: "Imagine Cannabis #206",
+      sub: "White Rock",
+      match: "#206",
+      // code: whiterock206
+      hash: "a712429165cb31ab8c5204dd4e0f3972fb02f447b3e0ff955f674d9a028aaabf"
+    }
+  ]
 };
 
-/* ---------- state ---------- */
-let state = { win:"today", sort:"gross", url:"", intervalMin:CONFIG.REFRESH_MINUTES };
-let RECORDS = [];          // deduped completed transactions
-let timer=null, countdown=null, nextAt=0;
-
-/* ---------- CSV parsing ---------- */
-function parseCSV(text){
-  const rows=[]; let row=[], field="", q=false;
+/* ============================================================
+   CSV — quote-aware tokenizer (product names contain commas)
+   ============================================================ */
+function tokenize(text){
+  const rows=[]; let row=[], val="", q=false;
+  text=text.replace(/\r\n/g,"\n").replace(/\r/g,"\n");
   for(let i=0;i<text.length;i++){
     const c=text[i];
-    if(q){ if(c==='"'){ if(text[i+1]==='"'){field+='"';i++;} else q=false; } else field+=c; }
-    else { if(c==='"') q=true; else if(c===','){ row.push(field); field=""; }
-      else if(c==='\n'){ row.push(field); rows.push(row); row=[]; field=""; }
-      else if(c==='\r'){} else field+=c; }
+    if(q){
+      if(c==='"'){ if(text[i+1]==='"'){ val+='"'; i++; } else q=false; }
+      else val+=c;
+    } else if(c==='"'){ q=true; }
+    else if(c===","){ row.push(val); val=""; }
+    else if(c==="\n"){ row.push(val); rows.push(row); row=[]; val=""; }
+    else val+=c;
   }
-  if(field.length||row.length){ row.push(field); rows.push(row); }
+  row.push(val); rows.push(row);
   return rows;
 }
-const num=v=>{ const n=parseFloat(String(v).replace(/[^0-9.\-]/g,"")); return isFinite(n)?n:0; };
 
-/* Order Details CSV → array of transactions. Dedupes by OrderNumber, keeps Completed only. */
-function parseOrders(text){
-  const rows=parseCSV(text);
+const num = v => { const n=parseFloat(String(v??"").replace(/[$,\s]/g,"")); return isFinite(n)?n:0; };
+
+/* Dates: "8/23/2026 2:58:49 PM" or "2026-08-23 14:58:49" -> "YYYY-MM-DD" */
+function toISO(s){
+  s=String(s||"").trim();
+  let m=s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if(m) return `${m[1]}-${m[2]}-${m[3]}`;
+  m=s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  if(m) return `${m[3]}-${String(m[1]).padStart(2,"0")}-${String(m[2]).padStart(2,"0")}`;
+  return "";
+}
+
+/* ============================================================
+   PARSE — Product Sales export (one row per line item)
+   Rolls line items up into orders, then into people.
+   Net = subtotalincludingdiscount (already gross − discount).
+   ============================================================ */
+const REQUIRED = ["orderid","employee","createddate","quantity","subtotalincludingdiscount"];
+
+function parseProductSales(text){
+  const rows = tokenize(text);
+
+  // "Report Generated: 8/24/2026 1:13:48 AM"
+  let generated="";
+  for(let i=0;i<Math.min(rows.length,5);i++){
+    const m=(rows[i][0]||"").match(/Report Generated:\s*(.+)$/i);
+    if(m){ generated=m[1].trim(); break; }
+  }
+
+  // Find the Details header. The file also holds Summary and Hourly Data
+  // blocks, so locate the row that actually carries the columns we need.
   let h=-1;
   for(let i=0;i<rows.length;i++){
-    const low=rows[i].map(x=>x.trim().toLowerCase());
-    if(low.includes("ordernumber") && low.includes("createddate")){ h=i; break; }
+    const head=rows[i].map(x=>x.trim().toLowerCase());
+    if(REQUIRED.every(c=>head.indexOf(c)>=0)){ h=i; break; }
   }
-  if(h===-1) throw new Error("Couldn't find the Order Details header (need OrderNumber and CreatedDate columns).");
+  if(h<0) throw new Error("This doesn't look like a Product Sales export — no Details section with OrderId, Employee, Quantity and subtotalincludingdiscount.");
+
   const head=rows[h].map(x=>x.trim().toLowerCase());
   const col=n=>head.indexOf(n.toLowerCase());
-  const cEmp=col("Employee"), cDate=col("CreatedDate"), cOrder=col("OrderNumber"),
-        cUnits=col("SoldProducts"), cGross=col("SubTotal"), cStatus=col("Status"), cPid=col("PatientId"), cDisc=col("Discount");
-  if(cEmp<0||cDate<0||cOrder<0||cUnits<0||cGross<0) throw new Error("Missing a required column (Employee, CreatedDate, OrderNumber, SoldProducts, SubTotal).");
-  const seen=new Set(), out=[];
-  let generated="";
-  for(let i=0;i<h;i++){ const m=rows[i].join(",").match(/Report Generated:\s*(.+)/i); if(m) generated=m[1].trim(); }
+  const cBranch=col("BranchName"), cOrder=col("OrderId"), cEmp=col("Employee"),
+        cDate=col("CreatedDate"), cQty=col("Quantity"), cNet=col("subtotalincludingdiscount"),
+        cGross=col("GrossSales"), cStatus=col("Status"), cMem=col("MemberId"),
+        cRefund=col("RefundDate");
+
+  // Roll line items up by order
+  const orders=new Map();
   for(let i=h+1;i<rows.length;i++){
-    const r=rows[i]; if(!r||r.length<head.length) continue;
-    if(cStatus>=0 && r[cStatus].trim() && r[cStatus].trim().toLowerCase()!=="completed") continue;
-    const ord=r[cOrder].trim(); if(!ord || seen.has(ord)) continue; seen.add(ord);
-    const emp=(r[cEmp]||"").trim()||"—";
-    const date=(r[cDate]||"").trim().slice(0,10);   // YYYY-MM-DD
-    if(!/^\d{4}-\d{2}-\d{2}$/.test(date)) continue;
-    // money field holds NET = SubTotal − Discount (matches Techpos net)
-    out.push({ order:ord, emp, date, units:num(r[cUnits]), gross:num(r[cGross]) - (cDisc>=0?num(r[cDisc]):0), member: cPid>=0 && num(r[cPid])>0 });
+    const r=rows[i];
+    if(r.length<head.length-4) continue;                 // blank line / next block
+    if(cStatus>=0 && (r[cStatus]||"").trim()!=="Completed") continue;
+    if(cRefund>=0 && (r[cRefund]||"").trim()) continue;   // drop refunded lines
+    const id=(r[cOrder]||"").trim(); if(!id) continue;
+    const date=toISO(r[cDate]); if(!date) continue;
+
+    let o=orders.get(id);
+    if(!o){
+      o={ order:id, date,
+          store:(cBranch>=0?(r[cBranch]||"").trim():""),
+          emp:(r[cEmp]||"").trim()||"—",
+          net:0, gross:0, units:0, member:false };
+      orders.set(id,o);
+    }
+    o.net   += num(r[cNet]);
+    o.gross += cGross>=0 ? num(r[cGross]) : num(r[cNet]);
+    o.units += num(r[cQty]);
+    if(cMem>=0 && num(r[cMem])>0) o.member=true;
+    if(o.emp==="—" && (r[cEmp]||"").trim()) o.emp=(r[cEmp]||"").trim();
   }
-  if(!out.length) throw new Error("No completed transactions found in this file.");
-  return { records:out, generated };
+
+  const records=[...orders.values()];
+  if(!records.length) throw new Error("No completed transactions found in this file.");
+  return { records, generated };
 }
 
-/* ---------- date windows (Sunday-start week) ---------- */
-function pad(n){ return String(n).padStart(2,"0"); }
-function ymd(d){ return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate()); }
-function windows(){
-  const now=new Date();
-  const today=ymd(now);
-  const start=new Date(now); start.setDate(now.getDate()-now.getDay());  // getDay(): Sun=0
-  return { today:{from:today,to:today}, week:{from:ymd(start),to:today} };
-}
-
-/* ---------- KPI computation ---------- */
-function compute(records, w){
-  const inWin=records.filter(r=>r.date>=w.from && r.date<=w.to);
-  const byEmp=new Map();
-  let tx=0, gross=0, units=0, members=0;
-  for(const r of inWin){
-    tx++; gross+=r.gross; units+=r.units; if(r.member) members++;
-    const e=byEmp.get(r.emp)||{name:r.emp,tx:0,gross:0,units:0,members:0};
-    e.tx++; e.gross+=r.gross; e.units+=r.units; if(r.member) e.members++; byEmp.set(r.emp,e);
+/* ============================================================
+   AGGREGATE — every KPI derives from net
+   ============================================================ */
+function aggregate(records){
+  const tot={net:0,units:0,tx:0,mem:0};
+  const by=new Map();
+  for(const r of records){
+    tot.net+=r.net; tot.units+=r.units; tot.tx++; if(r.member) tot.mem++;
+    let p=by.get(r.emp);
+    if(!p){ p={name:r.emp,net:0,units:0,tx:0,mem:0}; by.set(r.emp,p); }
+    p.net+=r.net; p.units+=r.units; p.tx++; if(r.member) p.mem++;
   }
-  const people=[...byEmp.values()].map(e=>({...e, atv:e.tx?e.gross/e.tx:0, upt:e.tx?e.units/e.tx:0, ret:e.tx?e.members/e.tx*100:0}));
-  const store={ tx, gross, units, members, atv:tx?gross/tx:0, upt:tx?units/tx:0, ret:tx?members/tx*100:0, staff:people.length };
-  return { store, people };
+  const derive=o=>({...o,
+    atv: o.tx? o.net/o.tx : 0,
+    upt: o.tx? o.units/o.tx : 0,
+    aup: o.units? o.net/o.units : 0,
+    ret: o.tx? (o.mem/o.tx)*100 : 0
+  });
+  const dates=[...new Set(records.map(r=>r.date))].sort();
+  return { store:derive(tot), people:[...by.values()].map(derive), dates };
 }
 
-/* ---------- formatting ---------- */
-const fMoney=n=>n.toLocaleString("en-CA",{minimumFractionDigits:2,maximumFractionDigits:2});
-const fInt=n=>Math.round(n).toLocaleString("en-CA");
-const curVal=n=>`<span class="cur">$</span>${fMoney(n)}`;
+/* ============================================================
+   RENDER
+   ============================================================ */
+const state={ sort:"net", records:[], store:null };
+const money=n=>"$"+n.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
-function prettyRange(w){
-  const f=new Date(w.from+"T00:00:00"), t=new Date(w.to+"T00:00:00");
-  const o={month:"short",day:"numeric"}, wd={weekday:"short"};
-  if(w.from===w.to) return t.toLocaleDateString("en-CA",{weekday:"short",month:"short",day:"numeric"});
-  return `${f.toLocaleDateString("en-CA",wd)} ${f.toLocaleDateString("en-CA",o)} – ${t.toLocaleDateString("en-CA",o)}`;
+const sortLbl={net:"net",atv:"ATV",upt:"UPT",aup:"AUP",tx:"tx",ret:"retention"};
+
+function fmtRange(dates){
+  if(!dates.length) return "";
+  const f=d=>new Date(d+"T12:00:00").toLocaleDateString(undefined,{month:"short",day:"numeric"});
+  return dates.length===1 ? f(dates[0]) : `${f(dates[0])} – ${f(dates[dates.length-1])}`;
 }
 
-/* ---------- render ---------- */
+function metric(label,val,delta,unit){
+  let d="";
+  if(delta!==null && delta!==undefined){
+    const cls=Math.abs(delta)<0.005?"flat":(delta>0?"up":"down");
+    const sign=delta>0?"+":"";
+    const v=unit==="$"?money(Math.abs(delta)).replace("$",""):Math.abs(delta).toFixed(2);
+    d=`<div class="delta ${cls}">${cls==="flat"?"on store avg":`${sign}${delta<0?"−":""}${v}${unit==="%"?"pts":""} vs store`}</div>`;
+  }
+  return `<div class="m"><div class="m-l">${label}</div><div class="m-v">${val}</div>${d}</div>`;
+}
+
 function render(){
-  const W=windows();
-  document.getElementById("storeName").textContent=CONFIG.STORE_LABEL;
-  document.getElementById("rngToday").textContent=prettyRange(W.today);
-  document.getElementById("rngWeek").textContent=prettyRange(W.week);
+  const {store,people,dates}=aggregate(state.records);
+  document.getElementById("storeName").textContent=state.store.label;
+  document.getElementById("storeSub").textContent=state.store.sub||"";
+  document.getElementById("heroTitle").textContent="Store";
+  document.getElementById("heroMeta").textContent=
+    `${fmtRange(dates)} · ${store.tx.toLocaleString()} transactions`;
 
-  const w = state.win==="today" ? W.today : W.week;
-  const {store,people}=compute(RECORDS,w);
+  document.getElementById("vNet").textContent=money(store.net);
+  document.getElementById("vTx").textContent=store.tx.toLocaleString();
+  document.getElementById("vAtv").textContent=money(store.atv);
+  document.getElementById("vUpt").textContent=store.upt.toFixed(2);
+  document.getElementById("vAup").textContent=money(store.aup);
+  document.getElementById("vRet").textContent=store.ret.toFixed(1)+"%";
 
-  document.getElementById("heroLabel").textContent = state.win==="today" ? "Store · today" : "Store · this week";
-  document.getElementById("heroMeta").textContent = prettyRange(w);
-  document.getElementById("vGross").innerHTML = curVal(store.gross);
-  document.getElementById("vAtv").innerHTML = curVal(store.atv);
-  document.getElementById("vUpt").textContent = store.upt.toFixed(2);
-  document.getElementById("vRet").innerHTML = store.tx ? `${store.ret.toFixed(1)}<span class="suf">%</span>` : "—";
-  document.getElementById("sTx").textContent = fInt(store.tx);
-  document.getElementById("sUnits").textContent = fInt(store.units);
-  document.getElementById("sMembers").textContent = fInt(store.members);
-  document.getElementById("sStaff").textContent = fInt(store.staff);
-
-  renderRows(store, people);
-}
-
-const sortKey={gross:"gross",atv:"atv",upt:"upt",tx:"tx",ret:"ret"};
-const sortLbl={gross:"net",atv:"ATV",upt:"UPT",tx:"tx",ret:"retention"};
-function renderRows(store, people){
   const el=document.getElementById("rows");
   if(!people.length){ el.innerHTML=`<div class="empty">No transactions in this window yet.</div>`; return; }
-  const k=sortKey[state.sort];
-  const sorted=[...people].sort((a,b)=>b[k]-a[k]);
-  const maxGross=Math.max(...sorted.map(p=>p.gross),1);
-  el.innerHTML="";
-  sorted.forEach((p,i)=>{
+  const key=state.sort==="net"?"net":state.sort;
+  people.sort((a,b)=>b[key]-a[key]);
+
+  el.innerHTML=people.map((p,i)=>{
+    const share=store.net?(p.net/store.net)*100:0;
     const lead=i===0;
-    const share = store.gross ? p.gross/store.gross*100 : 0;
-    const row=document.createElement("div");
-    row.className="row"+(lead?" lead":"");
-    row.innerHTML=`
+    return `<div class="row">
       <div class="rank">${i+1}</div>
       <div class="who">
         <span class="nm">${esc(p.name)}</span>
         ${lead?`<span class="crown">Top ${sortLbl[state.sort]}</span>`:""}
-        <span class="sh">${share.toFixed(0)}% of net</span>
+        <span class="sh">${share.toFixed(0)}% of net · ${p.tx} tx</span>
       </div>
       <div class="metrics">
-        ${metric("Net", curVal(p.gross), null)}
-        ${metric("ATV", curVal(p.atv), p.atv-store.atv, "$")}
-        ${metric("UPT", p.upt.toFixed(2), p.upt-store.upt, "")}
-        ${metric("Retention", `${p.ret.toFixed(1)}<span class="suf">%</span>`, p.ret-store.ret, "%")}
+        ${metric("Net",money(p.net),null)}
+        ${metric("ATV",money(p.atv),p.atv-store.atv,"$")}
+        ${metric("UPT",p.upt.toFixed(2),p.upt-store.upt,"")}
+        ${metric("AUP",money(p.aup),p.aup-store.aup,"$")}
+        ${metric("Retention",`${p.ret.toFixed(1)}<span class="suf">%</span>`,p.ret-store.ret,"%")}
       </div>
-      <div class="bar"><i style="width:${Math.max(4,p.gross/maxGross*100)}%"></i></div>
-      <div class="foot-line"><span>tx</span> ${fInt(p.tx)} &nbsp;·&nbsp; <span>members</span> ${fInt(p.members)} &nbsp;·&nbsp; <span>units</span> ${fInt(p.units)}</div>`;
-    el.appendChild(row);
-  });
-}
-function metric(label, valHtml, delta, unit){
-  let chip="";
-  if(delta!==null){
-    const eps=0.005, good=delta>0;
-    const cls=Math.abs(delta)<eps?"flat":(good?"up":"down");
-    const sign=delta>0?"+":"−", dv=Math.abs(delta);
-    const txt = cls==="flat" ? "—" : (unit==="$"?`${sign}$${fMoney(dv)}`:unit==="%"?`${sign}${dv.toFixed(1)}pp`:`${sign}${dv.toFixed(2)}`);
-    chip=`<span class="delta ${cls}">${txt}</span>`;
-  }
-  return `<div class="metric"><div class="m-l">${label}</div><div class="m-row"><span class="m-v">${valHtml}</span>${chip}</div></div>`;
+    </div>`;
+  }).join("");
 }
 
-/* ---------- data loading ---------- */
-function setData(parsed, status){
-  RECORDS = parsed.records;
-  setStatus(status);
-  const now=new Date().toLocaleTimeString("en-CA",{hour:"numeric",minute:"2-digit"});
-  const gen = parsed.generated ? `report ${parsed.generated} · ` : "";
-  document.getElementById("freshLine").innerHTML = `${gen}read <b>${now}</b>`;
+/* ============================================================
+   LOAD
+   ============================================================ */
+function forStore(records,store){
+  if(!store.match) return records;
+  const m=store.match.toLowerCase();
+  const hit=records.filter(r=>(r.store||"").toLowerCase().includes(m));
+  // A single-store export may not carry a matching BranchName; use it as-is.
+  return hit.length?hit:(new Set(records.map(r=>r.store)).size<=1?records:hit);
+}
+
+function load(text){
+  const {records,generated}=parseProductSales(text);
+  const mine=forStore(records,state.store);
+  if(!mine.length) throw new Error(`No rows for ${state.store.label} in this export.`);
+  state.records=mine;
   render();
-}
-function setStatus(kind){
-  const pill=document.getElementById("statusPill"), txt=document.getElementById("statusText");
-  pill.classList.toggle("live", kind==="live");
-  txt.textContent = kind==="live"?"Live":kind==="upload"?"Uploaded":kind==="error"?"Link error":"Snapshot";
+  if(generated) document.getElementById("heroMeta").textContent+=` · updated ${generated}`;
 }
 
-async function loadFromUrl(url, silent){
-  const err=document.getElementById("urlErr"); err.classList.remove("show");
-  try{
-    const res=await fetch(url,{cache:"no-store"});
-    if(!res.ok) throw new Error("HTTP "+res.status+" — check the web app is deployed to 'Anyone'.");
-    const text=await res.text();
-    setData(parseFeed(text), "live");
-    scheduleNext();
-  }catch(e){
-    setStatus("error");
-    if(!silent){ err.textContent="Couldn't load: "+e.message; err.classList.add("show"); }
-  }
-}
-/* Accepts the Apps Script JSON endpoint (preferred) or a published-CSV link. */
-function parseFeed(text){
-  const t=text.trimStart();
-  if(t[0]==="{"||t[0]==="["){
-    const j=JSON.parse(text);
-    if(j && j.error) throw new Error(j.error);
-    const raw=Array.isArray(j)?j:(j.records||[]);
-    const records=raw.map(r=>({
-      order:String(r.order ?? r.OrderNumber ?? ""),
-      emp:String(r.emp ?? r.Employee ?? "—").trim()||"—",
-      date:String(r.date ?? r.CreatedDate ?? "").slice(0,10),
-      units:num(r.units ?? r.SoldProducts),
-      gross:( r.net!==undefined ? num(r.net) : num(r.gross ?? r.SubTotal) - num(r.disc ?? r.Discount ?? 0) ),
-      member: (r.member!==undefined ? !!r.member : num(r.patientId ?? r.PatientId)>0)
-    })).filter(r=>/^\d{4}-\d{2}-\d{2}$/.test(r.date));
-    if(!records.length) throw new Error("The API returned no usable rows.");
-    return { generated:(j && j.generated)||"", records };
-  }
-  return parseOrders(text);   // fallback: raw CSV
-}
-async function handleFiles(list){
-  const files=[...list].filter(f=>/\.csv$/i.test(f.name)||f.type.includes("csv"));
-  const err=document.getElementById("fileErr"); err.classList.remove("show");
-  if(!files.length){ err.textContent="That wasn't a .csv export."; err.classList.add("show"); return; }
-  try{
-    // merge all dropped files, dedupe across them by order number
-    const seen=new Set(); const merged=[]; let gen="";
-    for(const f of files){
-      const p=parseOrders(await f.text()); gen=p.generated||gen;
-      for(const r of p.records){ if(seen.has(r.order)) continue; seen.add(r.order); merged.push(r); }
-    }
-    setData({records:merged, generated:gen}, "upload");
-    clearTimers();
-  }catch(ex){ err.textContent="Couldn't read that export: "+ex.message; err.classList.add("show"); }
-}
+document.getElementById("updateBtn").onclick=()=>document.getElementById("file").click();
+document.getElementById("file").onchange=e=>{
+  const f=e.target.files[0]; if(!f) return;
+  const rd=new FileReader();
+  rd.onload=()=>{ try{ load(rd.result); }catch(err){ alert(err.message); } };
+  rd.readAsText(f);
+  e.target.value="";
+};
 
-/* ---------- auto-refresh ---------- */
-function clearTimers(){ if(timer)clearInterval(timer); if(countdown)clearInterval(countdown); timer=countdown=null; document.getElementById("nextRefresh").textContent=""; }
-function scheduleNext(){
-  clearTimers();
-  if(!state.url) return;
-  const ms=state.intervalMin*60000;
-  timer=setInterval(()=>loadFromUrl(state.url,true), ms);
-  nextAt=Date.now()+ms;
-  const tick=()=>{ const left=Math.max(0,nextAt-Date.now()); const m=Math.floor(left/60000), s=Math.floor(left%60000/1000);
-    document.getElementById("nextRefresh").textContent=`next refresh in ${m}:${String(s).padStart(2,"0")}`; };
-  tick(); countdown=setInterval(tick,1000);
-}
-
-/* ---------- UI wiring ---------- */
-document.querySelectorAll(".toggle button").forEach(b=>b.addEventListener("click",()=>{
-  document.querySelectorAll(".toggle button").forEach(x=>x.setAttribute("aria-pressed","false"));
-  b.setAttribute("aria-pressed","true"); state.win=b.dataset.win; render();
-}));
-document.querySelectorAll(".sort button").forEach(b=>b.addEventListener("click",()=>{
-  document.querySelectorAll(".sort button").forEach(x=>x.setAttribute("aria-pressed","false"));
-  b.setAttribute("aria-pressed","true"); state.sort=b.dataset.sort; render();
-}));
-document.querySelectorAll(".modes button").forEach(b=>b.addEventListener("click",()=>{
-  document.querySelectorAll(".modes button").forEach(x=>x.setAttribute("aria-pressed","false"));
-  b.setAttribute("aria-pressed","true");
-  document.querySelectorAll(".panel").forEach(p=>p.classList.toggle("show",p.dataset.panel===b.dataset.mode));
-}));
-document.getElementById("urlLoad").addEventListener("click",()=>{
-  const u=document.getElementById("urlInput").value.trim(); if(!u) return;
-  state.url=u; loadFromUrl(u,false);
+document.querySelectorAll(".sort button").forEach(b=>{
+  b.onclick=()=>{
+    state.sort=b.dataset.sort;
+    document.querySelectorAll(".sort button").forEach(x=>x.setAttribute("aria-pressed",String(x===b)));
+    if(state.records.length) render();
+  };
 });
-document.getElementById("interval").addEventListener("change",e=>{ state.intervalMin=parseInt(e.target.value,10); if(state.url) scheduleNext(); });
-document.getElementById("refreshNow").addEventListener("click",()=>{ if(state.url) loadFromUrl(state.url,false); });
-document.getElementById("updateBtn").addEventListener("click",()=>document.getElementById("globalFile").click());
-document.getElementById("globalFile").addEventListener("change",e=>{ handleFiles(e.target.files); e.target.value=""; });
-document.getElementById("fileInput").addEventListener("change",e=>{ handleFiles(e.target.files); e.target.value=""; });
 
-let dragDepth=0; const dz=document.getElementById("dropZone");
-window.addEventListener("dragenter",e=>{ if(e.dataTransfer&&[...e.dataTransfer.types].includes("Files")){ e.preventDefault(); dragDepth++; dz.classList.add("show"); }});
-window.addEventListener("dragover",e=>{ if(e.dataTransfer&&[...e.dataTransfer.types].includes("Files")) e.preventDefault(); });
-window.addEventListener("dragleave",()=>{ if(--dragDepth<=0){ dragDepth=0; dz.classList.remove("show"); }});
-window.addEventListener("drop",e=>{ e.preventDefault(); dragDepth=0; dz.classList.remove("show"); if(e.dataTransfer&&e.dataTransfer.files.length) handleFiles(e.dataTransfer.files); });
+async function pullAPI(){
+  if(!CONFIG.API_URL) return;
+  const btn=document.getElementById("spin"); btn.classList.add("spin");
+  try{
+    const url=CONFIG.API_URL+(CONFIG.API_URL.includes("?")?"&":"?")+"code="+encodeURIComponent(state.code);
+    const res=await fetch(url);
+    const txt=await res.text();
+    load(txt);
+  }catch(err){
+    console.warn("Live feed unavailable:",err.message);
+  }finally{ btn.classList.remove("spin"); }
+}
 
-/* ---------- boot ---------- */
-(function init(){
-  document.getElementById("interval").value=String(state.intervalMin);
-  try{ setData(parseOrders(document.getElementById("seed").textContent), "snapshot"); }
-  catch(e){ console.error(e); }
-  if(CONFIG.API_URL){ state.url=CONFIG.API_URL; document.getElementById("urlInput").value=CONFIG.API_URL; loadFromUrl(CONFIG.API_URL,true); }
+/* ============================================================
+   GATE
+   ============================================================ */
+async function sha256(s){
+  const buf=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(s));
+  return [...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,"0")).join("");
+}
+const store={
+  get(k){ try{ return localStorage.getItem(k)||sessionStorage.getItem(k); }catch(e){ return null; } },
+  set(k,v,persist){ try{ (persist?localStorage:sessionStorage).setItem(k,v); }catch(e){} },
+  clear(k){ try{ localStorage.removeItem(k); sessionStorage.removeItem(k); }catch(e){} }
+};
+
+function openStore(s,code){
+  state.store=s; state.code=code;
+  document.getElementById("gate").classList.add("hidden");
+  document.getElementById("app").classList.remove("hidden");
+  document.title=`${s.label} · KPIs`;
+  document.getElementById("rows").innerHTML=
+    `<div class="empty">Choose <b>Update from export</b> and pick today's Product Sales CSV.</div>`;
+  pullAPI();
+  if(CONFIG.API_URL && CONFIG.REFRESH_MINUTES) setInterval(pullAPI,CONFIG.REFRESH_MINUTES*60000);
+}
+
+document.getElementById("gateForm").onsubmit=async e=>{
+  e.preventDefault();
+  const code=document.getElementById("code").value.trim();
+  const err=document.getElementById("gateErr");
+  if(!code){ err.textContent="Enter your store code."; return; }
+  const h=await sha256(code.toLowerCase());
+  const s=CONFIG.STORES.find(x=>x.hash===h);
+  if(!s){ err.textContent="That code doesn't match a store. Check with your manager."; return; }
+  err.textContent="";
+  store.set("blunt.code",code,document.getElementById("remember").checked);
+  openStore(s,code);
+};
+
+document.getElementById("signOut").onclick=()=>{ store.clear("blunt.code"); location.reload(); };
+
+document.getElementById("genBtn").onclick=async()=>{
+  const label=document.getElementById("genStore").value.trim()||"Store";
+  const match=document.getElementById("genMatch").value.trim();
+  const code=document.getElementById("genCode").value.trim();
+  if(!code){ document.getElementById("genOut").textContent="Enter a code first."; return; }
+  const h=await sha256(code.toLowerCase());
+  document.getElementById("genOut").textContent=
+`{ id: "${match.replace(/[^\w]/g,"")||"store"}", label: "${label}", sub: "", match: "${match}", hash: "${h}" },`;
+};
+
+(async()=>{
+  const saved=store.get("blunt.code");
+  if(!saved) return;
+  const h=await sha256(saved.toLowerCase());
+  const found=CONFIG.STORES.find(x=>x.hash===h);
+  if(found) openStore(found,saved);
 })();
 </script>
+</body>
+</html>
